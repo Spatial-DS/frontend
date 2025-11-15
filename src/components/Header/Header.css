@@ -1,0 +1,15 @@
+.header {
+    padding: 1.5rem 2rem;
+}
+
+.header-titles {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.header-title {
+    font-family: "Urbanist", sans-serif;
+    font-weight: bold;
+    color: rgba(var(--black), 1);
+}

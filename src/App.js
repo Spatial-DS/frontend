@@ -1,23 +1,29 @@
-import logo from './logo.svg';
+import React, { useState } from 'react';
 import './App.css';
 
+import Navbar from './components/NavBar/NavBar';
+import Header from './components/Header/Header';
+import ShelfCalculatorPage from './Pages/ShelfCalculator/ShelfCalculatorPage';
+import LayoutGeneratorPage from './Pages/LayoutGenerator/LayoutGeneratorPage';
+import SettingsPage from './Pages/Settings/SettingsPage'
+
 function App() {
+  const [activePage, setActivePage] = useState('shelfCalculator');
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className="container">
+      <Navbar 
+        activePage={activePage} 
+        onNavClick={setActivePage} 
+      />
+      <div className="content-container">
+        <Header activePage={activePage} />
+        <main className="main-content">
+          {activePage === 'shelfCalculator' && <ShelfCalculatorPage />}
+          {activePage === 'layoutGenerator' && <LayoutGeneratorPage />}
+          {activePage === 'settings' && <SettingsPage />}
+        </main>
+      </div>
     </div>
   );
 }

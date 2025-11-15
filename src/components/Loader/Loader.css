@@ -1,0 +1,35 @@
+.loader-container {
+  width: 100%;
+  padding: 10px 0;
+  color: rgba(var(--black), 1);
+}
+
+.loader-text {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.loader-bar {
+  width: 100%;
+  height: 0.5rem;
+  background-color: rgba(var(--black), 0.1);
+  border-radius: 0.25rem;
+  overflow: hidden;
+}
+
+.loader-progress {
+  width: 100%;
+  height: 100%;
+  background-color: rgba(var(--blue), 1);
+  border-radius: 0.25rem;
+  animation: loading-animation 2s linear infinite;
+}
+
+@keyframes loading-animation {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}

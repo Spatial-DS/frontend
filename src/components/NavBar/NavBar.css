@@ -1,0 +1,69 @@
+.navbar-section {
+  width: 15rem;
+  color: rgba(var(--black), 1);
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border-right: rgba(var(--black), 0.1) 1px solid;
+}
+
+.navbar-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.navbar-item:hover {
+  background-color: rgba(var(--orange), 0.1);
+}
+
+.navbar-item.active {
+  background-color: rgba(var(--orange), 0.5);
+  color: rgba(var(--black), 1);
+}
+
+.navbar-icon {
+    background-color: rgba(var(--blue), 1);
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    color: rgba(var(--white), 1)
+}
+
+.navbar-icon, .icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.navbar-titles {
+  display: flex;
+  flex-direction: column;
+}
+
+.navbar-title {
+  font-family: 'Urbanist', sans-serif;
+  font-weight: bold;
+  font-size: 1rem;
+}
+
+.navbar-subtitle {
+  font-size: 0.8rem;
+  color: rgba(var(--black), 0.5);
+}
+
+.navbar-item.active .navbar-subtitle {
+  color: rgba(var(--black), 1);
+}
+
+
+.core-features {
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: rgba(var(--blue), 1);
+}

@@ -1,0 +1,49 @@
+.form-field {
+  width: 100%;
+  max-width: 500px;
+}
+
+.form-field-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.form-field-label {
+  font-size: 1rem;
+  font-weight: 600;
+  color: rgba(var(--black), 0.9);
+}
+
+.form-field-help {
+  color: rgba(var(--black), 0.4);
+  cursor: help;
+}
+
+.form-field-input-wrapper {
+  position: relative;
+}
+
+.form-field-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(var(--black), 0.5);
+}
+
+.form-field-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  padding-left: 2.75rem;
+  font-size: 1rem;
+  font-family: "Lato", sans-serif;
+  border: 1px solid rgba(var(--black), 0.2);
+  border-radius: 0.5rem;
+  background-color: rgba(var(--black), 0.02);
+}
+
+.form-field-input::placeholder {
+  color: rgba(var(--black), 0.4);
+}
