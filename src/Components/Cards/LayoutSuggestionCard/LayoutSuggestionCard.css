@@ -1,0 +1,249 @@
+.layout-generator-page {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.layout-generator-page > .layout-content-grid,
+.layout-generator-page > .input-card,
+.layout-generator-page > .page-actions,
+.layout-generator-page > .results-area,
+.layout-generator-page > .loader-container {
+  width: 100%;
+}
+
+.layout-content-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+/* Columns */
+.layout-column-left,
+.layout-column-right {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  justify-content: stretch; 
+}
+
+.layout-column-left > .input-card,
+.layout-column-right > .upload-card {
+  height: 100%; 
+}
+
+
+@media (max-width: 1024px) {
+  .layout-content-grid {
+    grid-template-columns: 1fr; /* Stack into a single column */
+  }
+}
+
+/* --- Results Page Styles --- */
+.results-area {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.results-grid-top {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.results-grid-bottom {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+@media (max-width: 1024px) {
+  .results-grid-top,
+  .results-grid-bottom {
+    grid-template-columns: 1fr;
+  }
+}
+
+.no-results-message {
+  width: 100%;
+  background-color: rgba(var(--white), 1);
+  border-radius: 1rem;
+  padding: 4rem 2rem;
+  border: 1px solid rgba(var(--black), 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.no-results-message h3 {
+  font-family: 'Urbanist', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: rgba(var(--black), 1);
+  margin-bottom: 0.5rem;
+}
+
+.no-results-message p {
+  font-size: 1rem;
+  color: rgba(var(--black), 0.6);
+  max-width: 400px;
+  line-height: 1.5;
+}
+
+.preferences-subtitle {
+  font-size: 1rem;
+  color: rgba(var(--black), 0.7);
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+.preferences-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .preferences-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Form Styles (inside the card) */
+.form-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  height: 100%;
+}
+.form-row {
+  display: flex;
+  gap: 1rem;
+}
+.form-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.form-content label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(var(--black), 0.8);
+}
+
+.form-content input[type="text"],
+.form-content select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  border: 1px solid rgba(var(--black), 0.2);
+  border-radius: 0.5rem;
+  background-color: rgba(var(--black), 0.02);
+  font-family: "Lato", sans-serif;
+}
+.form-content input[type="text"]::placeholder {
+  color: rgba(var(--black), 0.4);
+}
+
+/* Page Actions (at the bottom) */
+.page-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  width: 100%;
+  padding-top: 1rem;
+  gap: 1rem;
+  border-top: 1px solid rgba(var(--black), 0.1);
+}
+
+.layout-suggestion-card {
+  background-color: rgba(var(--white), 1);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  border: 1px solid rgba(var(--black), 0.2);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.layout-suggestion-card:hover {
+  border-color: rgba(var(--blue), 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.layout-suggestion-card.selected {
+  border-color: rgba(var(--blue), 1);
+  box-shadow: 0 0 0 1px rgba(var(--blue), 1);
+}
+
+.layout-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.layout-card-title {
+  font-family: 'Urbanist', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* --- Internal Floor Tabs --- */
+.layout-card-tabs {
+  display: flex;
+  gap: 0.25rem;
+  background-color: rgba(var(--black), 0.05);
+  padding: 0.25rem;
+  border-radius: 0.5rem;
+}
+
+.card-floor-tab {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  color: rgba(var(--black), 0.6);
+  transition: all 0.2s;
+}
+
+.card-floor-tab:hover {
+  background-color: rgba(var(--black), 0.1);
+}
+
+.card-floor-tab.active {
+  background-color: rgba(var(--white), 1);
+  color: rgba(var(--black), 1);
+  font-weight: bold;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.layout-card-image-container {
+  width: 100%;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border: 1px solid rgba(var(--black), 0.1);
+}
+
+.layout-card-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+}

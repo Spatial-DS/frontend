@@ -1,0 +1,33 @@
+.furniture-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid rgba(var(--black), 0.2);
+  border-radius: 0.5rem;
+  background-color: rgba(var(--white), 1);
+}
+
+.furniture-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.furniture-title {
+  font-weight: 600;
+  color: rgba(var(--black), 0.9);
+}
+
+.furniture-subtitle {
+  font-size: 0.85rem;
+  color: rgba(var(--black), 0.6);
+}
+
+.furniture-delete-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(var(--red), 1);
+  cursor: pointer;
+}

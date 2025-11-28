@@ -1,0 +1,41 @@
+.upload-card {
+  /* Inherits most styles from .card (e.g., background-color, padding, flex, etc.) */
+  border: 1px solid rgba(var(--black), 0.2); /* Slight difference from .card */
+  height: 25rem; /* Specific height for this card type */
+}
+
+/* --- Removed all card-header, header-content-group, header-row, etc. styles --- */
+
+/* --- DROPZONE SECTION (Specific to UploadCard) --- */
+.upload-card .dropzone {
+  background-color: rgba(var(--blue), 0.05);
+  border: 1px dashed rgba(var(--black), 1);
+  border-radius: 0.5rem;
+  padding: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  flex: 1; /* Fills the rest of the card height */
+  gap: 1rem; 
+}
+
+.upload-card .dropzone-icon {
+  font-size: 2rem;
+  color: rgba(var(--black), 0.5);
+  margin: 0; 
+}
+
+.upload-card .dropzone-text-primary {
+  font-weight: bold;
+  color: rgba(var(--black), 1);
+  font-size: 1rem;
+  margin: 0;
+}
+
+.upload-card .dropzone-text-secondary {
+  font-size: 1rem;
+  color: rgba(var(--black), 0.8);
+  margin: 0;
+}

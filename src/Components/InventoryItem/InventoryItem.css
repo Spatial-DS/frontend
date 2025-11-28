@@ -1,0 +1,46 @@
+.inventory-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border-bottom: 1px solid rgba(var(--black), 0.1);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.inventory-item:hover {
+  background-color: rgba(var(--black), 0.02);
+}
+
+.inventory-item:last-child {
+  border-bottom: none;
+}
+
+.inventory-item-title {
+  flex: 1;
+  font-weight: 600;
+  color: rgba(var(--black), 0.8);
+}
+
+.inventory-item.selected .inventory-item-title {
+  color: rgba(var(--blue), 1);
+  font-weight: 700;
+}
+
+.inventory-item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(var(--black), 0.6);
+}
+
+.inventory-item-icon-right {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(var(--black), 0.6);
+}
+
+.inventory-item-icon.danger {
+  color: rgba(var(--red), 1);
+}

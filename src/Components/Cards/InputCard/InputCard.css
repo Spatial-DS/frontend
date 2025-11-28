@@ -1,0 +1,22 @@
+/* Wrapper for the main content (children) */
+.input-card-content {
+  /* Inherits flex: 1 from .card to fill height */
+  padding: 0;
+  height: 100%;
+  flex: 1; /* Ensures content fills the available height below the header */
+}
+
+/* This modifier class adds padding if needed (e.g., for forms) */
+.input-card-content:not(.input-card-content--no-padding) {
+  padding-top: 1rem;
+  margin-top: 1rem;
+  border-top: 1px solid rgba(var(--black), 0.1);
+  /* The padding/border separation ensures visual flow */
+}
+
+/* Settings page list */
+.input-card-content--no-padding {
+  padding: 0;
+  border-top: none;
+  margin-top: 0.75rem; 
+}

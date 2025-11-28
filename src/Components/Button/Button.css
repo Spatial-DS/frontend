@@ -1,0 +1,96 @@
+.btn-universal {
+    font-weight: bold; 
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    border: 1px solid transparent;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+    font-family: "Lato", sans-serif;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+}
+
+/* --- Disabled State --- */
+.btn-universal:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+/* --- Size Variants --- */
+.btn-md {
+    padding: 0.75rem 1.5rem; 
+}
+
+.btn-sm {
+    padding: 0.5rem 1rem; 
+    font-size: 1rem;
+}
+
+
+/* --- Default Variant (Blue) --- */
+.btn-default {
+    background-color: rgba(var(--blue), 1);
+    color: rgba(var(--white), 1);
+    border-color: rgba(var(--blue), 1);
+}
+.btn-default:hover {
+    opacity: 0.9;
+    box-shadow: 0 4px 8px rgba(var(--blue), 0.2);
+}
+
+/* --- Danger Variant (Red) --- */
+.btn-danger {
+    background-color: rgba(var(--red), 1);
+    color: rgba(var(--white), 1);
+    border-color: rgba(var(--red), 1);
+}
+.btn-danger:hover {
+    opacity: 0.9;
+    box-shadow: 0 4px 8px rgba(var(--red), 0.2);
+}
+
+/* --- Outline Variant (Transparent) --- */
+.btn-outline {
+    background-color: rgba(var(--white), 1);
+    color: rgba(var(--black), 1);
+    border-color: rgba(var(--black), 0.4);
+}
+.btn-outline:hover {
+    background-color: rgba(var(--black), 0.05);
+    border-color: rgba(var(--black), 0.4);
+}
+
+/* --- Danger Outline Variant --- */
+.btn-danger-outline {
+    background-color: rgba(var(--white), 1);
+    color: rgba(var(--red), 1);
+    border-color: rgba(var(--red), 1);
+}
+
+.btn-danger-outline:hover {
+    background-color: rgba(var(--red), 0.05);
+}
+
+/* --- Text Variant --- */
+.btn-text {
+  background-color: transparent;
+  color: rgba(var(--blue), 1);
+  border-color: transparent;
+  font-weight: 600;
+}
+
+.btn-text:hover {
+  background-color: rgba(var(--blue), 0.05);
+}
+
+/* Text variant doesn't need as much padding */
+.btn-text.btn-default {
+  padding: 0.75rem 1rem;
+}
+.btn-text.btn-small {
+  padding: 0.5rem 0.75rem;
+}
+

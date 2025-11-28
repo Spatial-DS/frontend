@@ -1,0 +1,56 @@
+.zone-distribution-container {
+  background-color: rgba(var(--white), 1);
+  border-radius: 1rem;
+  /* padding: 1.5rem; Removed padding from container, let parent handle gaps */
+  width: 100%;
+}
+
+.zone-dist-header {
+    margin-bottom: 1rem;
+}
+
+.zone-dist-title {
+    font-family: 'Urbanist', sans-serif;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.zone-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.zone-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background-color: rgba(var(--black), 0.02);
+  border-radius: 0.5rem;
+  border: 1px solid rgba(var(--black), 0.1);
+}
+
+.zone-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.zone-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.zone-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: rgba(var(--black), 0.8);
+}
+
+.zone-area {
+  font-size: 0.8rem;
+  color: rgba(var(--black), 0.5);
+}
+

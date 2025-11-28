@@ -1,0 +1,49 @@
+@import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&family=Urbanist:ital,wght@0,100..900;1,100..900&display=swap');
+
+:root {
+  /*--- Colours ---*/
+  --red: 232, 0, 42;
+  --orange: 255, 130, 1;
+  --blue: 0, 71, 187;
+  --white: 255, 255, 255;
+  --black: 52, 58, 64;
+}
+
+* {
+  font-family: "Lato", sans-serif;
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+/* This is your main flex-row container */
+.container {
+  display: flex;
+  flex-direction: row;
+  justify-content: start;
+  align-items: start;
+  height: 100vh;
+  width: 100vw;
+  background-color: rgba(var(--white), 0.01);
+  overflow-x: hidden; 
+}
+
+/* Main content wrapper */
+.content-container {
+  flex: 1;
+  min-width: 0;
+  height: 100vh;
+  overflow-y: auto;
+  color: rgba(var(--black), 1);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Page Wrapper */
+.main-content {
+  background-color: rgba(var(--blue), 0.05);
+  padding: 1.5rem 2rem;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}

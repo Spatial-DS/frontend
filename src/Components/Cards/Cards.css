@@ -1,0 +1,79 @@
+/* --- BASE CARD STYLE (for .card) --- */
+.card {
+    background-color: rgba(var(--white), 1);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    width: 100%;
+    color: rgba(var(--black), 1);
+    border: 1px solid rgba(var(--black), 0.1);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05);
+    gap: 1rem;
+}
+
+
+/* --- UNIVERSAL CARD HEADER STRUCTURE (for all cards) --- */
+
+.card .card-header {
+  display: flex;
+  flex-direction: row; 
+  align-items: flex-start; /* Align contents to the top */
+  justify-content: space-between; /* Push action button to the right */
+  width: 100%;
+  gap: 1rem; /* Space between the text group and the action button */
+}
+
+/* Grouping Icon/Title and Subtitle */
+.card .header-content-group {
+    display: flex;
+    flex-direction: column; /* Stacks the two rows vertically */
+    gap: 0.25rem; /* Small gap between the title and subtitle areas */
+}
+
+/* Icon + Title Row */
+.card .header-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem; 
+}
+
+.card .card-icon {
+  color: rgba(var(--blue), 1); /* Use base blue color */
+  font-size: 1.25rem;
+}
+
+.card .card-icon-wrapper {
+  /* Retained for older or specific cards that might use it instead of .card-icon */
+  color: rgba(var(--blue), 1);
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card .card-title {
+  font-family: 'Urbanist', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: rgba(var(--black), 1);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.card .card-subtitle {
+  font-size: 1rem;
+  color: rgba(var(--black), 0.6);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Header Actions (Pushed Right) */
+.card .header-actions {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0; /* Prevents action button from shrinking */
+}

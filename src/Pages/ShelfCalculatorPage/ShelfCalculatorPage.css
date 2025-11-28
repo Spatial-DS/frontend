@@ -1,0 +1,135 @@
+/* --- Main Container --- */
+.shelf-calculator-page {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin: 0 auto;
+  gap: 1.5rem;
+  color: rgba(var(--black), 1);
+  box-sizing: border-box;
+  align-items: center; 
+}
+
+.card-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+}
+
+.card-row {
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+    width: 100%;
+}
+
+/* --- FORM INPUT STYLING --- */
+.form-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  height: 100%; 
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.input-row {
+  display: flex;
+  gap: 1rem;
+  width: 100%;
+}
+
+.input-wrapper {
+  flex: 1; 
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.input-wrapper label {
+  font-size: 0.875rem;
+  font-weight: 600; /* Bold label matches other pages */
+  color: rgba(var(--black), 0.8);
+}
+
+/* Matches SettingsPage & LayoutGenerator styles */
+.input-wrapper input[type="number"], 
+.input-wrapper input[type="text"] {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  font-family: "Lato", sans-serif;
+  border: 1px solid rgba(var(--black), 0.2);
+  border-radius: 0.5rem;
+  background-color: rgba(var(--black), 0.02);
+  transition: border-color 0.2s;
+}
+
+.input-wrapper input:focus {
+  border-color: rgba(var(--blue), 0.5);
+  background-color: rgba(var(--white), 1);
+  outline: none;
+}
+
+.form-subtitle {
+  font-size: 0.9rem;
+  color: rgba(var(--black), 0.8);
+  line-height: 1.6;
+  background-color: rgba(var(--blue), 0.05); 
+  padding: 1.25rem; 
+  border-radius: 0.75rem;
+  margin: 0;
+}
+
+/* --- Results Area --- */
+.results-area {
+  display: flex;
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.no-results-message {
+  width: 100%;
+  background-color: rgba(var(--white), 1);
+  border-radius: 1rem;
+  padding: 4rem 2rem;
+  border: 1px solid rgba(var(--black), 0.1); 
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.no-results-message h3 {
+  font-family: 'Urbanist', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: rgba(var(--black), 1);
+  margin-bottom: 0.5rem;
+}
+
+.no-results-message p {
+  font-size: 1rem;
+  color: rgba(var(--black), 0.6);
+  max-width: 400px;
+  line-height: 1.5;
+}
+
+/* --- Page Actions (Footer) --- */
+.page-actions {
+  display: flex;
+  justify-content: flex-end; 
+  align-items: center;
+  width: 100%;
+  padding-top: 1.75rem; 
+  padding-bottom: 2.25rem; 
+  gap: 1rem; 
+  margin-top: 1.75rem;
+  border-top: 1px solid rgba(var(--black), 0.1);
+}

@@ -1,0 +1,41 @@
+.header {
+    padding: 1.5rem 2rem;
+}
+
+/* .header-titles {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.header-title {
+    font-family: "Urbanist", sans-serif;
+    font-weight: bold;
+    color: rgba(var(--black), 1);
+} */
+
+.header {
+    padding: 1.5rem 2rem;
+    /* Use flexbox to align items horizontally */
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center; /* Vertically center the button with the text */
+}
+
+.header-titles {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.header-title {
+    font-family: "Urbanist", sans-serif;
+    font-weight: bold;
+    color: rgba(var(--black), 1);
+}
+
+/* Optional: Style for the subtitle if not already global */
+.header-subtitle {
+    color: rgba(var(--black), 0.6);
+}

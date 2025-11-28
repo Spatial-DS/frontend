@@ -1,0 +1,111 @@
+.selection-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; /* Align items to start for better layout with input */
+  justify-content: center;
+  gap: 0.75rem; /* Space between icon/title and input */
+  padding: 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(var(--black), 0.2);
+  background-color: rgba(var(--white), 1);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left; /* Align text left */
+  min-height: 100px;
+  width: 100%; /* Ensure it fills the grid cell */
+}
+
+.selection-card:hover {
+  background-color: rgba(var(--black), 0.02);
+  border-color: rgba(var(--blue), 0.5);
+}
+
+.selection-card.selected {
+  background-color: rgba(var(--blue), 0.05);
+  border-color: rgba(var(--blue), 1);
+  box-shadow: 0 0 0 1px rgba(var(--blue), 0.5);
+  color: rgba(var(--blue), 1);
+}
+
+/* --- Top Section (Icon + Title) --- */
+.selection-content-top {
+    display: flex;
+    flex-direction: row; /* Side by side */
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+}
+
+.selection-icon {
+  font-size: 1.5rem;
+  color: rgba(var(--black), 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.selection-card.selected .selection-icon {
+  color: rgba(var(--blue), 1);
+}
+
+.selection-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: rgba(var(--black), 0.8);
+  line-height: 1.3;
+}
+
+.selection-card.selected .selection-title {
+  color: rgba(var(--blue), 1);
+}
+
+/* --- Input Section --- */
+.selection-input-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    width: 100%;
+    margin-top: 0.25rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(var(--blue), 0.2);
+    animation: fadeIn 0.2s ease-in-out;
+}
+
+.selection-input-label {
+    font-size: 0.75rem;
+    color: rgba(var(--black), 0.6);
+}
+
+.selection-input-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.selection-area-input {
+    width: 100%;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid rgba(var(--blue), 0.3);
+    border-radius: 0.25rem;
+    font-size: 0.9rem;
+    color: rgba(var(--blue), 1);
+    background-color: rgba(var(--white), 1);
+    font-weight: bold;
+    outline: none;
+}
+
+.selection-area-input:focus {
+    border-color: rgba(var(--blue), 1);
+    box-shadow: 0 0 0 2px rgba(var(--blue), 0.1);
+}
+
+.selection-unit {
+    font-size: 0.9rem;
+    color: rgba(var(--blue), 0.8);
+    font-weight: bold;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}

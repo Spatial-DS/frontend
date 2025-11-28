@@ -1,0 +1,32 @@
+.guide-content {
+    /* Set padding-top to 0 and use margin-top to create separation */
+    padding-top: 0; 
+    margin-top: 1rem;
+    border-top: 1px solid rgba(var(--black), 0.1); /* Separator line like other cards */
+    flex: 1; /* Ensures the guide content fills the rest of the height */
+    overflow-y: auto; /* Allow scrolling if list is too long */
+}
+
+.guide-list {
+    list-style-type: none; /* Remove default dots/numbers */
+    padding: 0;
+    margin: 0;
+    counter-reset: guide-counter;
+    display: flex;
+    flex-direction: column;
+    gap: 12px; /* Space between list items */
+}
+
+ol.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+li.guide-item {
+    display: flex;
+    flex-direction: row;
+    justify-content: start;
+    align-items: cemter;
+}
