@@ -1,5 +1,13 @@
-flask
-flask-cors
 pandas
 openpyxl
 python-docx
+deap
+matplotlib
+numba
+numpy
+panda
+scipy
+shapely
+uvicorn
+fastapi
+python-multipart

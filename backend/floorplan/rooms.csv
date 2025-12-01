@@ -1,0 +1,19 @@
+short,full,color
+ent,Entrance,#f8c8dc
+lob,Lobby/Transition,#b4c7e7
+bdr,Bookdrop,#ffe699
+loc,Reservation Lockers,#fff2cc
+met,Meeting Rooms,#c5e0b4
+sty,Study Area,#d9d9d9
+gen,General Collection,#d4a67d
+chd,Children's Collection,#f4b183
+yth,Youth Collection,#9dc3e6
+stf,Staff & Operations,#bdd7ee
+toi,Toilets,#e2f0d9
+dgt,Digital Collection,#ccc0da
+sgc,SG-based Collection,#a9d18e
+caf,Cafe,#f8de7e
+mag,Magazine Collection,#f2f2f2
+str,Stairs,#ffc000
+esc,Escalators,#ffcc33
+lif,Lift,#ffd966

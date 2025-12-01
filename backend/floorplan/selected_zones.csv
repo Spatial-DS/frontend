@@ -1,0 +1,18 @@
+short,area,unit
+ent, 50, sqft
+lob, , 
+bdr, 10, sqft
+loc, 10, sqft
+met, 10, percent
+sty, 10, percent
+gen, 20, percent
+chd, 10, percent
+yth, 5, percent
+stf, 10, percent
+toi, 5, percent
+dgt, 5, percent
+sgc, 5, percent
+mag, 5, percent 
+str, 50, sqft 
+esc, 50, sqft 
+lif, 40, sqft
