@@ -1,31 +1,47 @@
+/* --- ORIGINAL LAYOUT STYLES --- */
+.layout-generator-page {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.layout-generator-page > .layout-content-grid,
+.layout-generator-page > .input-card,
+.layout-generator-page > .page-actions,
+.layout-generator-page > .results-area,
+.layout-generator-page > .loader-container {
+  width: 100%;
+}
+
 .layout-content-grid {
   display: grid;
-  grid-template-columns: 1fr 2fr; /* Left guide is smaller, Right upload is wider */
+  grid-template-columns: 1fr 1fr; /* Original 50/50 split */
   gap: 1.5rem;
   align-items: flex-start;
 }
 
-.layout-column-left {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    /* Ensure GuideCard doesn't stretch too tall unnecessarily, but fills width */
-}
-
+.layout-column-left,
 .layout-column-right {
   display: flex;
   flex-direction: column;
-  gap: 1rem; /* Gap between tabs and card */
-  justify-content: start; 
+  gap: 1.5rem;
+  justify-content: stretch; 
 }
 
-/* --- FLOOR TABS --- */
+.layout-column-left > .input-card,
+.layout-column-right > .upload-card {
+  height: 100%; 
+}
+
+/* Floor Tabs */
 .floor-tabs-container {
     display: flex;
     flex-direction: row;
     gap: 0.5rem;
     align-items: flex-end;
-    border-bottom: 1px solid rgba(var(--black), 0.1);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     padding-bottom: 1px;
 }
 
@@ -35,23 +51,23 @@
     padding: 0.5rem 1rem;
     font-size: 0.9rem;
     font-weight: 600;
-    color: rgba(var(--black), 0.6);
+    color: rgba(0, 0, 0, 0.6);
     cursor: pointer;
     border-radius: 0.5rem 0.5rem 0 0;
     transition: all 0.2s ease;
 }
 
 .floor-tab:hover {
-    background-color: rgba(var(--black), 0.05);
-    color: rgba(var(--black), 0.8);
+    background-color: rgba(0, 0, 0, 0.05);
+    color: rgba(0, 0, 0, 0.8);
 }
 
 .floor-tab.active {
-    background-color: rgba(var(--white), 1);
-    border-color: rgba(var(--black), 0.2);
-    border-bottom-color: rgba(var(--white), 1); /* Hide bottom border to blend */
-    color: rgba(var(--blue), 1);
-    margin-bottom: -2px; /* Push down to cover the container line */
+    background-color: rgba(255, 255, 255, 1);
+    border-color: rgba(0, 0, 0, 0.2);
+    border-bottom-color: rgba(255, 255, 255, 1);
+    color: rgba(0, 71, 187, 1);
+    margin-bottom: -2px;
     z-index: 1;
 }
 
@@ -62,229 +78,154 @@
     padding: 0.5rem;
 }
 
-/* Responsive: Stack columns on small screens */
-@media (max-width: 1024px) {
-  .layout-content-grid {
-    grid-template-columns: 1fr; 
-  }
+/* Preferences Grid (Zone Cards) */
+.preferences-subtitle {
+  font-size: 1rem;
+  color: rgba(0, 0, 0, 0.7);
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
 }
 
-/* ... [Keep existing styles for .layout-generator-page, etc.] ... */
-
-/* --- GRID LAYOUT --- */
-.layout-content-grid {
+.preferences-grid {
   display: grid;
-  grid-template-columns: 1fr 2fr; /* Left is smaller, Right is larger */
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+}
+
+/* Results Area */
+.results-area {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
   gap: 1.5rem;
-  
-  /* CHANGE 1: Stretch items so both columns are the same height */
-  align-items: stretch; 
+}
+
+.results-grid-top {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* Original 3-column grid for cards */
+  gap: 1.5rem;
   width: 100%;
 }
 
-/* --- LEFT COLUMN --- */
-.layout-column-left {
-  display: flex;
-  flex-direction: column;
+.results-grid-bottom {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
   gap: 1.5rem;
-  height: 100%; /* Ensure the column div fills the grid cell height */
+  width: 100%;
 }
 
-/* CHANGE 2: Make the last card (Zones) expand to fill empty space */
-.layout-column-left > .card:last-child {
-  flex: 1;
+.no-results-message {
+  width: 100%;
+  padding: 4rem;
+  text-align: center;
+  background: white;
+  border-radius: 1rem;
+  border: 1px solid rgba(0,0,0,0.1);
 }
 
-/* --- RIGHT COLUMN --- */
-.layout-column-right {
+.page-actions {
   display: flex;
-  flex-direction: column;
-  gap: 0; /* No gap because tabs sit on the border */
-  height: 100%; /* Ensure the column div fills the grid cell height */
+  justify-content: flex-end;
+  align-items: center;
+  width: 100%;
+  padding-top: 1rem;
+  gap: 1rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
 }
 
-/* CHANGE 3: Make the content (UploadCard or Tracer) expand to fill height */
-/* We target the direct children that serve as the main content area */
-.layout-column-right > .upload-card,
-.layout-column-right > .tracer-container {
-  flex: 1; /* Grow to fill vertical space */
-  display: flex;
-  flex-direction: column;
-  /* Ensure internal content like dropzones stretch too */
-  height: 100%; 
-}
-
-/* --- FLOOR TABS & ADD BUTTON (Keep existing) --- */
-.floor-tabs-container {
-    display: flex;
-    flex-direction: row;
-    gap: 0.25rem;
-    align-items: flex-end;
-    padding-left: 1rem;
-    margin-bottom: -1px;
-    z-index: 2;
-}
-
-.floor-tab {
-    background-color: transparent;
-    border: 1px solid transparent;
-    padding: 0.5rem 1rem;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: rgba(var(--black), 0.6);
-    cursor: pointer;
-    border-radius: 0.5rem 0.5rem 0 0;
-    transition: all 0.2s ease;
-    position: relative;
-}
-
-.floor-tab:hover {
-    background-color: rgba(var(--black), 0.05);
-    color: rgba(var(--black), 0.8);
-}
-
-.floor-tab.active {
-    background-color: rgba(var(--white), 1);
-    border: 1px solid rgba(var(--black), 0.2);
-    border-bottom-color: rgba(var(--white), 1);
-    color: rgba(var(--blue), 1);
-    padding-bottom: 0.6rem;
-}
-
-.floor-tab.add-tab {
+.loader-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(255,255,255,0.9);
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0.5rem;
-    width: 36px;
-}
-
-/* --- RESPONSIVE --- */
-@media (max-width: 1024px) {
-  .layout-content-grid {
-    grid-template-columns: 1fr; 
-  }
-  
-  .floor-tabs-container {
-      padding-left: 0;
-      margin-top: 1.5rem;
-  }
-  
-  /* Reset height on mobile so it flows naturally */
-  .layout-column-left,
-  .layout-column-right {
-    height: auto;
-  }
+    z-index: 9999;
 }
 
 .preferences-textarea {
     width: 100%;
-    height: 100%;
-    min-height: 120px;
     padding: 1rem;
-    border: 1px solid rgba(var(--black), 0.2);
+    border: 1px solid rgba(0,0,0,0.2);
     border-radius: 0.5rem;
-    background-color: rgba(var(--black), 0.02);
+    background-color: rgba(0,0,0,0.02);
     resize: none;
-    font-family: "Lato", sans-serif;
-    font-size: 0.95rem;
+    font-family: inherit;
+    min-height: 100px;
 }
 
-.preferences-textarea:focus {
-    outline: none;
-    border-color: rgba(var(--blue), 0.5);
-    background-color: rgba(var(--white), 1);
+.text-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    border: 1px solid rgba(0,0,0,0.2);
+    border-radius: 0.5rem;
+    background-color: rgba(0,0,0,0.02);
 }
 
-/* ... [Keep existing styles for layout-content-grid, etc.] ... */
-
-/* --- ZONE DISTRIBUTION BREAKDOWN (Figma Style) --- */
-.zone-distribution-container {
-  width: 100%;
-  margin-top: 1rem;
-}
-
-.zone-grid {
-  display: grid;
-  /* Create a responsive grid that fits 2 columns mostly, stacking on very small screens */
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
-  gap: 1rem;
-}
-
-.zone-chip {
+/* --- NEW STYLES: Toggle Button (Inline) --- */
+.unit-toggle-btn {
+  flex-shrink: 0;
+  height: 30px; 
+  min-width: 45px;
+  margin-left: 6px;
+  padding: 0 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
   display: flex;
   align-items: center;
-  padding: 1rem;
-  /* Light grey background similar to Figma */
-  background-color: rgba(var(--black), 0.03); 
-  border-radius: 0.75rem; /* Rounded corners */
-  transition: transform 0.2s ease, background-color 0.2s;
-}
-
-.zone-chip:hover {
-  background-color: rgba(var(--black), 0.05);
-}
-
-/* The Color Swatch */
-.zone-color {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px; /* Soft rounded corners for swatch */
-  flex-shrink: 0;
-  margin-right: 1rem; /* Space between swatch and text */
-}
-
-/* Text Container */
-.zone-info {
-  display: flex;
-  flex-direction: column;
   justify-content: center;
-  gap: 0.25rem;
+  font-family: inherit;
+  transition: all 0.2s ease;
 }
 
-.zone-name {
-  font-family: 'Urbanist', sans-serif;
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: rgba(var(--black), 0.9);
-  line-height: 1.2;
+.unit-toggle-btn.mode-auto {
+  background-color: #eef2ff;
+  color: #0047BB;
+  border: 1px solid #0047BB;
 }
 
-.zone-area {
-  font-family: 'Lato', sans-serif;
-  font-size: 0.85rem;
-  color: rgba(var(--black), 0.6);
-  font-weight: 500;
+.unit-toggle-btn.mode-unit {
+  background-color: #f0f0f0;
+  color: #333;
+  border: 1px solid #ccc;
 }
 
-/* --- Floor Tabs (Specific to Results Section) --- */
-/* Ensure these styles match the ones used in the input section but scoped if needed */
-.results-floor-tabs {
+.unit-toggle-btn:hover {
+  filter: brightness(0.95);
+}
+
+/* Zone Stats Styling */
+.zone-distribution-container {
+    margin-top: 1rem;
+}
+.zone-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.8rem;
+}
+.zone-chip {
     display: flex;
-    gap: 0.25rem;
-    background-color: rgba(var(--black), 0.05);
-    padding: 0.25rem;
-    border-radius: 0.5rem;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    border: 1px solid #eee;
+    border-radius: 6px;
+    background: #f9f9f9;
 }
-
-.results-floor-tab {
-    font-size: 0.8rem;
-    padding: 0.25rem 0.75rem;
-    border-radius: 0.25rem;
-    cursor: pointer;
-    color: rgba(var(--black), 0.6);
-    transition: all 0.2s;
-    border: none;
-    background: transparent;
+.zone-color {
+    width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0;
 }
-
-.results-floor-tab:hover {
-    background-color: rgba(var(--black), 0.1);
+.zone-info {
+    display: flex; flex-direction: column;
 }
+.zone-name { font-size: 0.75rem; font-weight: 600; }
+.zone-area { font-size: 0.7rem; color: #666; }
 
-.results-floor-tab.active {
-    background-color: rgba(var(--white), 1);
-    color: rgba(var(--black), 1);
-    font-weight: bold;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+/* Responsive */
+@media (max-width: 1024px) {
+  .layout-content-grid { grid-template-columns: 1fr; }
+  .results-grid-top, .results-grid-bottom { grid-template-columns: 1fr; }
 }
