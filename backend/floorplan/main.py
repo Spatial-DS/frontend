@@ -193,27 +193,24 @@ def setup_and_run_default_optimization():
     rules_df = pd.DataFrame(0.0, index=room_df["short"], columns=room_df["short"])
     np.fill_diagonal(rules_df.values, -1)
     rules_df = pd.read_csv("rules.csv", index_col=0)
-    room_data = RoomData(room_df, rules_df, selected_zones_df)
+    room_data = _prepare_room_data(room_df, rules_df, constraints=None)
 
     text_prompt = """
     make toilets repel child with strength 10.
     make entrance attract gen with strength 5.
-    ensure gen is compact with weight 1.5.
+    ensure gen is square with weight 2.0.
     """
 
-    # --- 3. Run the Multi-Resolution Optimization ---
     final_results = run_multi_resolution_optimization(
         plans=all_plans,
         room_data=room_data,
-        target_node_counts=[50, 300, 500],
-        generations=[100, 100, 100],
-        pop_sizes=[10, 25, 10],
+        target_node_counts=[50, 300],  # Reduced for speed in test
+        generations=[50, 50],
+        pop_sizes=[10, 10],
         total_gfa=10900,
         text_prompt=text_prompt,
         show_progress=True,
-        # You can still override specific GA params for all stages here
     )
-
     # --- 4. Save Final Outputs ---
     if final_results:
         output_dir = "layouts"

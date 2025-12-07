@@ -2,12 +2,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
-# New import for headless geometry generation
-from floorplan.geoemetry_postprocessing import process_layout_to_json
 from scipy.spatial import cKDTree
 
 from floorplan.data_models import (
+    DiscretizationResult,
     FloorPlan,
     Individual,
     OptimizationResult,
@@ -15,13 +13,19 @@ from floorplan.data_models import (
 )
 from floorplan.evaluation import FitnessEvaluator, _propagate_numba
 from floorplan.ga import GeneticOptimizer
-from floorplan.geometry import DiscretizationResult, GeometryProcessor
+from floorplan.geometry import GeometryProcessor
+
+# New import for headless geometry generation
+from floorplan.geoemetry_postprocessing import process_layout_to_json
 from floorplan.graph import GraphBuilder
 from floorplan.rules import RuleEngine
 
-# Conditional import for rendering to avoid hard dependency if strictly headless
 try:
-    from rendering import render_all_floors_contour, render_grid_to_axis
+    from floorplan.rendering import (
+        render_all_floors_contour,
+        render_contour_to_axis,
+        render_grid_to_axis,
+    )
 
     HAS_RENDERING = True
 except ImportError:
@@ -122,7 +126,6 @@ def _run_optimization_stage(
     use_local_search: bool = True,
     num_layouts: int = 3,
     text_prompt: str | None = None,
-    # Visualization / Interactive flags
     interactive: bool = False,
     show_progress: bool = True,
     render_every: int = 5,
@@ -198,14 +201,12 @@ def _run_optimization_stage(
         random_walk_scale=random_walk_scale,
     )
 
-    # Visualization Setup (Only if interactive)
     fig, ax = (None, None)
     if interactive and show_progress and HAS_RENDERING:
         fig, ax = plt.subplots(figsize=(10, 10))
         plt.ion()
 
     def progress_callback(gen, total_gen, fitness, best_ind):
-        # In headless mode, we might just log or pass
         if gen % render_every == 0:
             if interactive and fig and ax:
                 optimizer._evaluate_with_cache(best_ind)
@@ -237,7 +238,6 @@ def _run_optimization_stage(
         use_local_search=use_local_search,
     )
 
-    # Close interactive plot
     if fig:
         plt.close(fig)
 
@@ -245,7 +245,6 @@ def _run_optimization_stage(
     results: list[OptimizationResult] = []
 
     for i, ind in enumerate(hall_of_fame):
-        # A. Propagate Centroids to Full Grid
         initial_centroids = np.array(
             [
                 [node, evaluator.type_map[t]]
@@ -264,7 +263,6 @@ def _run_optimization_stage(
             evaluator.n_types,
         )
 
-        # B. Calculate Area Stats
         counts = np.bincount(final_assignment, minlength=evaluator.n_types)
         proportions = counts / max(master_graph.n_nodes, 1)
         area_df = pd.DataFrame(
@@ -275,12 +273,11 @@ def _run_optimization_stage(
             }
         )
 
-        # C. Generate Output (Polygons vs SVG)
         floor_layouts = []
         svg_render = None
 
         if not interactive:
-            # HEADLESS MODE: Generate JSON Polygons
+            # HEADLESS MODE
             floor_layouts = process_layout_to_json(
                 plans=plans,
                 disc_results=floor_disc_results,
@@ -289,14 +286,12 @@ def _run_optimization_stage(
                 type_names=evaluator.type_names,
             )
         elif HAS_RENDERING:
-            # INTERACTIVE MODE: Generate SVG (Legacy support)
+            # INTERACTIVE LEGACY SVG LOGIC
             import io
 
-            # 1. Map global nodes back to floor-local indices for rendering centroids
             floor_individuals = [{} for _ in range(len(plans))]
             for type_name, nodes in ind.items():
                 for node_idx in nodes:
-                    # Find which floor range this node falls into
                     floor_idx = (
                         np.searchsorted(
                             master_graph.floor_node_ranges[:, 0], node_idx, side="right"
@@ -309,17 +304,11 @@ def _run_optimization_stage(
                         local_node_idx
                     )
 
-            # 2. Render each floor to a temporary figure and save to buffer
             svg_renders_per_floor = []
             for floor_idx, plan in enumerate(plans):
                 start, end = master_graph.floor_node_ranges[floor_idx]
                 floor_assignment = final_assignment[start : end + 1]
-
                 fig_render, ax_render = plt.subplots(figsize=(12, 12))
-
-                # Use default smoothness if variable is not passed in kwargs
-                smoothness = locals().get("spline_smoothness", 1.5)
-
                 render_contour_to_axis(
                     ax_render,
                     plan,
@@ -328,14 +317,12 @@ def _run_optimization_stage(
                     floor_individuals[floor_idx],
                     final_room_data.room_df,
                     evaluator.type_map,
-                    spline_smoothness=smoothness,
+                    spline_smoothness=1.5,
                 )
-
                 svg_buffer = io.StringIO()
                 fig_render.savefig(svg_buffer, format="svg", bbox_inches="tight")
                 plt.close(fig_render)
                 svg_renders_per_floor.append(svg_buffer.getvalue())
-
             svg_render = "".join(svg_renders_per_floor)
 
         results.append(
@@ -358,29 +345,62 @@ def run_multi_resolution_optimization(
     generations: list[int],
     pop_sizes: list[int],
     total_gfa: float,
+    num_layouts: int = 3,  # Requested variations
     text_prompt: str | None = None,
     interactive: bool = False,
     show_progress: bool = True,
     **kwargs,
 ) -> list[OptimizationResult] | None:
     """
-    Orchestrates the multi-resolution optimization strategy.
+    Orchestrates the multi-resolution optimization strategy with BRANCHING.
     """
-    top_individuals = None
-    coarse_disc_results = None
-    final_results = None
 
-    for i, target_nodes in enumerate(target_node_counts):
-        print(f"\n--- Stage {i + 1}: Target Nodes ~{target_nodes} ---")
+    # 1. Run STAGE 1 (Coarse) to find distinct topological starting points
+    print(f"\n--- Stage 1: Coarse Topology Search (~{target_node_counts[0]} nodes) ---")
 
-        # Determine current config
-        current_gen = generations[i] if i < len(generations) else generations[-1]
-        current_pop = pop_sizes[i] if i < len(pop_sizes) else pop_sizes[-1]
+    # Use the first generation setting
+    gen_0 = generations[0]
+    pop_0 = pop_sizes[0]
 
-        # Upsampling logic
-        seed_population = None
-        if top_individuals and coarse_disc_results:
-            # Dry run to get fine discretization for upsampling
+    results_stage_1, disc_results_1 = _run_optimization_stage(
+        plans=plans,
+        room_data=room_data,
+        target_node_count=target_node_counts[0],
+        generations=gen_0,
+        pop_size=pop_0,
+        total_gfa=total_gfa,
+        num_layouts=num_layouts,  # Get k distinct layouts here
+        text_prompt=text_prompt,
+        interactive=interactive,
+        show_progress=show_progress,
+        **kwargs,
+    )
+
+    if len(target_node_counts) == 1:
+        return results_stage_1
+
+    # 2. Branching: Refine each distinct coarse layout independently
+    final_branch_results = []
+
+    print(
+        f"\n--- Branching: Refining {len(results_stage_1)} distinct variations independently ---"
+    )
+
+    for idx, coarse_result in enumerate(results_stage_1):
+        print(f"\n[Variation {idx + 1}] Refinement chain...")
+
+        current_individual = coarse_result.individual
+        current_disc = disc_results_1
+
+        # Run remaining stages for THIS branch
+        for i in range(1, len(target_node_counts)):
+            target_nodes = target_node_counts[i]
+            current_gen = generations[i] if i < len(generations) else generations[-1]
+            current_pop = pop_sizes[i] if i < len(pop_sizes) else pop_sizes[-1]
+
+            print(f"  - Stage {i + 1}: Upsampling to ~{target_nodes} nodes")
+
+            # Upsample logic
             fine_disc_dry_run: list[DiscretizationResult] = []
             for plan in plans:
                 temp_poly = GeometryProcessor._create_combined_polygon(plan)
@@ -395,106 +415,32 @@ def run_multi_resolution_optimization(
                     GeometryProcessor.discretize(plan, n=effective_n)
                 )
 
-            seed_population = [
-                upsample_individual(ind, coarse_disc_results, fine_disc_dry_run)
-                for ind in top_individuals
+            seed_pop = [
+                upsample_individual(current_individual, current_disc, fine_disc_dry_run)
             ]
 
-        results, disc_results = _run_optimization_stage(
-            plans=plans,
-            room_data=room_data,
-            target_node_count=target_nodes,
-            generations=current_gen,
-            pop_size=current_pop,
-            total_gfa=total_gfa,
-            text_prompt=text_prompt,
-            initial_population=seed_population,
-            interactive=interactive,
-            show_progress=show_progress,
-            **kwargs,
-        )
+            # Run stage with tiny population focused on refining this specific seed
+            # We enforce num_layouts=1 because we just want the best version of *this* branch
+            results, disc = _run_optimization_stage(
+                plans=plans,
+                room_data=room_data,
+                target_node_count=target_nodes,
+                generations=current_gen,
+                pop_size=current_pop,
+                total_gfa=total_gfa,
+                num_layouts=1,
+                text_prompt=text_prompt,
+                initial_population=seed_pop,
+                interactive=interactive,
+                show_progress=False,  # Reduce noise
+                **kwargs,
+            )
 
-        final_results = results
-        top_individuals = [res.individual for res in results]
-        coarse_disc_results = disc_results
+            current_individual = results[0].individual
+            current_disc = disc
 
-    if interactive and final_results and HAS_RENDERING:
-        print("Rendering final interactive plot...")
-        # 1. Rebuild Master Graph
-        floor_graphs = []
-        floor_connections = []
-        all_fixed_nodes = {}
-        node_offset = 0
+            # If this is the final stage, save the result
+            if i == len(target_node_counts) - 1:
+                final_branch_results.append(results[0])
 
-        for disc_result in coarse_disc_results:
-            graph = GraphBuilder.build_for_single_floor(disc_result)
-            floor_graphs.append(graph)
-            floor_connections.append(disc_result.connection_nodes)
-            for type_name, nodes in disc_result.fixed_nodes.items():
-                all_fixed_nodes.setdefault(type_name, []).extend(
-                    [n + node_offset for n in nodes]
-                )
-            node_offset += graph.n_nodes
-
-        master_graph = GraphBuilder.stitch_graphs(floor_graphs, floor_connections)
-
-        # 2. Rebuild Room Data (Apply normalization and rules)
-        normalized_zones_df = (
-            _normalize_zone_areas(room_data.selected_zones_df, total_gfa)
-            if room_data.selected_zones_df is not None
-            else None
-        )
-        rule_engine = RuleEngine()
-        final_rules_df, dynamic_rules = rule_engine.parse_text(
-            text_prompt or "", room_data
-        )
-        final_room_data = RoomData(
-            room_data.room_df, final_rules_df, normalized_zones_df
-        )
-
-        # 3. Rebuild Evaluator
-        evaluator = FitnessEvaluator(
-            graph=master_graph,
-            room_data=final_room_data,
-            fixed_nodes=all_fixed_nodes,
-            dynamic_rules=dynamic_rules,
-            w_area=kwargs.get("w_area", 1.0),
-            w_adj=kwargs.get("w_adj", 1.0),
-        )
-
-        # 4. Propagate the Best Individual to get full node assignments
-        best_ind = final_results[0].individual
-        initial_centroids = np.array(
-            [
-                [node, evaluator.type_map[t]]
-                for t, nodes in best_ind.items()
-                for node in nodes
-                if t in evaluator.type_map
-            ],
-            dtype=np.int32,
-        )
-        final_assignment = _propagate_numba(
-            initial_centroids,
-            evaluator.target_counts,
-            master_graph.adj_indices,
-            master_graph.adj_indptr,
-            master_graph.n_nodes,
-            evaluator.n_types,
-        )
-
-        # 5. Render
-        fig_final, _ = plt.subplots(figsize=(5 * len(plans), 5))
-        render_all_floors_contour(
-            fig_final,
-            plans,
-            coarse_disc_results,
-            final_assignment,
-            best_ind,
-            master_graph.floor_node_ranges,
-            final_room_data.room_df,
-            evaluator.type_map,
-            spline_smoothness=kwargs.get("spline_smoothness", 1.5),
-        )
-        plt.show()
-
-    return final_results
+    return final_branch_results

@@ -98,7 +98,7 @@ function ShelfCalculatorPage() {
         formData.append('current_size', currentSize);
         formData.append('months', numMonths);
 
-        const response = await fetch('http://localhost:5000/calculate-shelf', {
+        const response = await fetch('http://localhost:8000/calculate-shelf', {
             method: 'POST',
             body: formData,
         });

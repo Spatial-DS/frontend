@@ -17,14 +17,9 @@ from sqlalchemy.orm import Session
 
 # Import your modules
 # Ensure these imports match your folder structure
-try:
-    from floorplan.database import Base, engine, get_db, Job
-    from floorplan.data_models import OptimizationRequest
-    from floorplan.worker import process_optimization_job
-except ImportError:
-    from database import Base, engine, get_db, Job
-    from data_models import OptimizationRequest
-    from worker import process_optimization_job
+from floorplan.database import Base, engine, get_db, Job
+from floorplan.data_models import OptimizationRequest
+from floorplan.worker import process_optimization_job
 
 # Import the shelf calculator logic
 from shelf_run import run_shelf_calculator

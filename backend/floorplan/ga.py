@@ -155,7 +155,7 @@ class GeneticOptimizer:
         if not population: return []
         population.sort(key=lambda x: x.fitness.values[0])
         hall_of_fame = [population[0]]
-        dist_threshold = 2.0
+        dist_threshold = 0
         for cand in population[1:]:
             if len(hall_of_fame) >= k: break
             min_dist = float('inf')

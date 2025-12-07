@@ -5,7 +5,7 @@ import pandas as pd
 from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
 
-# Import the actual models to make the mock realistic
+# Import the actual models
 from floorplan.data_models import FloorLayout, ZonePolygon
 
 @pytest.fixture
@@ -20,7 +20,7 @@ def sample_payload():
             }
         ],
         "constraints": [
-            {"short_code": "ent", "area_value": 50, "unit": "sqft"},
+            {"short_code": "ent", "area_value": 50, "unit": "sqm"},
             {"short_code": "gen", "area_value": 20, "unit": "percent"}
         ],
         "global_parameters": {
@@ -33,9 +33,7 @@ def sample_payload():
 
 @patch("floorplan.worker.run_multi_resolution_optimization")
 def test_full_job_lifecycle_with_output_verification(mock_algo, client, sample_payload):
-    # -------------------------------------------------------------------------
     # 1. SETUP: Mock the Heavy Lifting
-    # -------------------------------------------------------------------------
     mock_result = MagicMock()
     mock_result.fitness = 95.5
     
@@ -45,8 +43,6 @@ def test_full_job_lifecycle_with_output_verification(mock_algo, client, sample_p
         "Calculated GFA": [100.0, 200.0]
     })
 
-    # --- FIX: Use actual Pydantic Models instead of dicts ---
-    # The worker calls .model_dump() on these, so they must be objects.
     mock_result.floor_layouts = [
         FloorLayout(
             floor_name="Level 1",
@@ -65,16 +61,12 @@ def test_full_job_lifecycle_with_output_verification(mock_algo, client, sample_p
     
     mock_algo.return_value = [mock_result]
 
-    # -------------------------------------------------------------------------
-    # 2. SUBMIT: Post the Job
-    # -------------------------------------------------------------------------
+    # 2. SUBMIT
     response = client.post("/optimize", json=sample_payload)
-    assert response.status_code == 202  # Expect 202 Accepted
+    assert response.status_code == 202
     job_id = response.json()["job_id"]
 
-    # -------------------------------------------------------------------------
-    # 3. PROCESS: Trigger the Worker manually
-    # -------------------------------------------------------------------------
+    # 3. PROCESS
     from floorplan.database import SessionLocal
     from floorplan.worker import process_optimization_job
     
@@ -82,32 +74,34 @@ def test_full_job_lifecycle_with_output_verification(mock_algo, client, sample_p
     process_optimization_job(job_id, db)
     db.close()
 
-    # -------------------------------------------------------------------------
-    # 4. VERIFY: Check the Output Structure
-    # -------------------------------------------------------------------------
+    # 4. VERIFY
     result_resp = client.get(f"/jobs/{job_id}")
     assert result_resp.status_code == 200
     data = result_resp.json()
 
-    # A. Check Status
-    # If the worker failed, this will be "failed" and contain the error traceback
     if data["status"] == "failed":
         pytest.fail(f"Worker failed with error: {data.get('error')}")
 
     assert data["status"] == "completed"
     assert data["result"] is not None
 
+    # --- FIX: Handle 'variations' list ---
+    res_root = data["result"]
+    assert "variations" in res_root
+    assert len(res_root["variations"]) > 0
+    
+    variation = res_root["variations"][0]
+
     # B. Check Metrics
-    res = data["result"]
-    assert res["fitness"] == 95.5
+    assert variation["fitness"] == 95.5
     
     # C. Check Area Stats
-    stats = res["area_stats"]
+    stats = variation["area_stats"]
     assert len(stats) == 2
     assert stats[0]["Zone"] == "ent"
 
     # D. Check Geometry
-    layouts = res["layouts"]
+    layouts = variation["layouts"]
     assert len(layouts) == 1
     assert layouts[0]["floor_name"] == "Level 1"
     

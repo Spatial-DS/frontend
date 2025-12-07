@@ -1,15 +1,7 @@
 import React, { useRef, useState } from 'react';
+import { INITIAL_ZONES } from '../../Pages/LayoutGeneratorPage/LayoutGeneratorPage'; // adjust path as needed
 
-// You will need to export INITIAL_ZONES from LayoutGeneratorPage or duplicate the config here.
-// For minimal friction, pass getColor/getTitle as props or duplicate the helper locally.
-// Assuming simple duplication of the helper for isolation:
-const COLORS = {
-  gen: '#d4a67d', chd: '#f4b183', yth: '#9dc3e6', dgt: '#ccc0da',
-  sty: '#d9d9d9', met: '#c5e0b4', lob: '#b4c7e7', caf: '#f8de7e',
-  stf: '#bdd7ee', toi: '#e2f0d9', mag: '#f2f2f2', sgc: '#a9d18e'
-};
-
-const ResultVisualizer = ({ imageSrc, zones, dimensions }) => {
+const ResultVisualizer = ({ imageSrc, zones, dimensions, areaStats }) => {
   const [hoveredZone, setHoveredZone] = useState(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const containerRef = useRef(null);
@@ -21,6 +13,23 @@ const ResultVisualizer = ({ imageSrc, zones, dimensions }) => {
     }
   };
 
+  // Build quick lookup for zone info from INITIAL_ZONES
+  const ZONE_INFO = INITIAL_ZONES.reduce((acc, z) => {
+    acc[z.short] = { title: z.title, color: z.color };
+    return acc;
+  }, {});
+
+  // Merge area into zones
+  const enrichedZones = zones?.map(z => {
+    const areaObj = areaStats?.find(s => s.Zone === z.type);
+    return {
+      ...z,
+      title: ZONE_INFO[z.type]?.title || z.type,
+      color: ZONE_INFO[z.type]?.color || '#cccccc',
+      area: areaObj?.['Calculated GFA'] || 0
+    };
+  }) || [];
+
   const viewBox = dimensions ? `0 0 ${dimensions.width} ${dimensions.height}` : undefined;
 
   return (
@@ -29,22 +38,22 @@ const ResultVisualizer = ({ imageSrc, zones, dimensions }) => {
       style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', backgroundColor: '#f0f0f0' }}
       onMouseMove={handleMouseMove}
     >
-      {imageSrc ? (
+      {imageSrc && (
         <img src={imageSrc} alt="Floor Plan" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-      ) : null}
+      )}
 
       <svg
         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
         viewBox={viewBox}
         preserveAspectRatio="none"
       >
-        {zones && zones.map((zone, idx) => {
+        {enrichedZones.map((zone, idx) => {
           const pointsStr = zone.polygon.map(p => p.join(',')).join(' ');
           return (
             <polygon
               key={idx}
               points={pointsStr}
-              fill={COLORS[zone.type] || '#cccccc'}
+              fill={zone.color}
               stroke="rgba(0,0,0,0.3)"
               strokeWidth="1"
               fillOpacity="0.65"
@@ -54,8 +63,25 @@ const ResultVisualizer = ({ imageSrc, zones, dimensions }) => {
           );
         })}
       </svg>
-      
-      {/* Tooltip omitted for thumbnails to keep it clean, or can be added back if desired */}
+
+      {hoveredZone && (
+        <div
+          style={{
+            position: 'absolute',
+            left: mousePos.x + 12,
+            top: mousePos.y + 12,
+            padding: '6px 8px',
+            background: 'rgba(0,0,0,0.75)',
+            color: '#fff',
+            fontSize: 12,
+            borderRadius: 3,
+            pointerEvents: 'none',
+            whiteSpace: 'nowrap'
+          }}
+        >
+          {hoveredZone.title} — {Math.round(hoveredZone.area)} sqm
+        </div>
+      )}
     </div>
   );
 };

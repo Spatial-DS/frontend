@@ -13,19 +13,23 @@ import GuideCard from '../../Components/Cards/GuideCard/GuideCard';
 import Icon from '../../Components/Icon/Icon';
 import ResultVisualizer from '../../Components/ResultVisualizer/ResultVisualizer';
 
-const INITIAL_ZONES = [
-  { short: 'gen', title: 'General Collection', icon: 'Library', isSelected: true, mode: 'auto', area: '', color: '#d4a67d' },
-  { short: 'chd', title: "Children's Collection", icon: 'Palette', isSelected: true, mode: 'auto', area: '', color: '#f4b183' },
-  { short: 'yth', title: 'Youth Collection', icon: 'Users', isSelected: true, mode: 'auto', area: '', color: '#9dc3e6' },
-  { short: 'dgt', title: 'Digital Collection', icon: 'Monitor', isSelected: true, mode: 'auto', area: '', color: '#ccc0da' },
-  { short: 'sty', title: 'Study Area', icon: 'BookOpen', isSelected: true, mode: 'auto', area: '', color: '#d9d9d9' },
-  { short: 'met', title: 'Meeting Rooms', icon: 'DoorOpen', isSelected: true, mode: 'auto', area: '', color: '#c5e0b4' },
-  { short: 'lob', title: 'Lobby', icon: 'PersonStanding', isSelected: true, mode: 'auto', area: '', color: '#b4c7e7' },
-  { short: 'caf', title: 'Cafe', icon: 'Coffee', isSelected: true, mode: 'auto', area: '', color: '#f8de7e' },
-  { short: 'stf', title: 'Staff & Ops', icon: 'Briefcase', isSelected: true, mode: 'auto', area: '', color: '#bdd7ee' },
-  { short: 'toi', title: 'Toilets', icon: 'Toilet', isSelected: true, mode: 'auto', area: '', color: '#e2f0d9' },
-  { short: 'mag', title: 'Magazines', icon: 'Newspaper', isSelected: true, mode: 'auto', area: '', color: '#f2f2f2' },
-  { short: 'sgc', title: 'SG Collection', icon: 'Flag', isSelected: true, mode: 'auto', area: '', color: '#a9d18e' },
+export const INITIAL_ZONES = [
+  { short: 'ent', title: 'Entrance', icon: 'Library', isSelected: true, mode: 'percent', area: 1, color: '#3366cc' },
+  { short: 'lob', title: 'Lobby/Transition', icon: 'PersonStanding', isSelected: true, mode: 'auto', area: '', color: '#cc9933' },
+  { short: 'bdr', title: 'Bookdrop', icon: 'Archive', isSelected: true, mode: 'sqm', area: 10, color: '#ff8800' },
+  { short: 'loc', title: 'Reservation Lockers', icon: 'Package', isSelected: true, mode: 'sqm', area: 3, color: '#8844cc' },
+  { short: 'met', title: 'Meeting Rooms', icon: 'DoorOpen', isSelected: true, mode: 'auto', area: '', color: '#008877' },
+  { short: 'sty', title: 'Study Area', icon: 'BookOpen', isSelected: true, mode: 'auto', area: '', color: '#66aadd' },
+  { short: 'adl', title: 'Adult Collection', icon: 'Library', isSelected: true, mode: 'percent', area: 35, color: '#2e7d32' },
+  { short: 'exh', title: 'Exhibitions', icon: 'Image', isSelected: false, mode: 'percent', area: 5, color: '#cc2288' },
+  { short: 'prg', title: 'Programming Space', icon: 'Users', isSelected: true, mode: 'percent', area: 5, color: '#ddaa00' },
+  { short: 'chd', title: "Children's Collection", icon: 'Palette', isSelected: true, mode: 'percent', area: 10, color: '#ffdd33' },
+  { short: 'com', title: 'Community Owned Space', icon: 'UsersRound', isSelected: false, mode: 'percent', area: 5, color: '#8d6e63' },
+  { short: 'yth', title: 'Youth Collection', icon: 'Users', isSelected: true, mode: 'percent', area: 5, color: '#00bcd4' },
+  { short: 'stf', title: 'Staff Areas (e.g. Back-of-House)', icon: 'Briefcase', isSelected: true, mode: 'percent', area: 10, color: '#555555' },
+  { short: 'toi', title: 'Toilets', icon: 'Toilet', isSelected: true, mode: 'sqm', area: 15, color: '#bbbbbb' },
+  { short: 'caf', title: 'Cafe', icon: 'Coffee', isSelected: false, mode: 'percent', area: 5, color: '#cc3333' },
+  { short: 'esc', title: 'Stairs/Escalators/Lifts', icon: 'Stairs', isSelected: true, mode: 'sqm', area: 10, color: '#888888' },
 ];
 
 const API_BASE_URL = "http://localhost:8000";
@@ -99,7 +103,7 @@ function LayoutGeneratorPage() {
   const handleModeCycle = (index, e) => {
     e.stopPropagation();
     const newZones = [...zoneSettings];
-    const modes = ['auto', 'sqft', 'percent'];
+    const modes = ['auto', 'sqm', 'percent'];
     const currentMode = newZones[index].mode || 'auto';
     const nextMode = modes[(modes.indexOf(currentMode) + 1) % modes.length];
     newZones[index].mode = nextMode;
@@ -276,7 +280,7 @@ function LayoutGeneratorPage() {
                 <div className="zone-color" style={{ backgroundColor: zoneConfig.color }}></div>
                 <div className="zone-info">
                   <span className="zone-name">{zoneConfig.title}</span>
-                  <span className="zone-area">{area} sqft (Total)</span>
+                  <span className="zone-area">{area} sqm (Total)</span>
                 </div>
               </div>
             );
@@ -302,12 +306,12 @@ function LayoutGeneratorPage() {
             <GuideCard steps={["Upload floorplan", "Trace boundary & fixed items", "Set GFA & Zones", "Generate"]} title="Process Guide" />
             <InputCard icon="Building" title="Building Parameters">
               <div style={{ padding: '0 1rem 1rem 1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 600 }}>Total Gross Floor Area (sqft)</label>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 600 }}>Total Gross Floor Area (sqm)</label>
                 <input type="number" className="text-input" value={totalGFA} onChange={(e) => setTotalGFA(e.target.value)} />
               </div>
             </InputCard>
             <InputCard icon="AppWindow" title="Zone Requirements">
-              <p className="preferences-subtitle">Select zones. Click the badge to toggle Auto / ft² / %.</p>
+              <p className="preferences-subtitle">Select zones. Click the badge to toggle Auto / m² / %.</p>
               <div className="preferences-grid">
                 {zoneSettings.map((zone, index) => (
                   <div key={zone.short}>
@@ -319,7 +323,7 @@ function LayoutGeneratorPage() {
                     >
                       {zone.isSelected && (
                         <button onClick={(e) => handleModeCycle(index, e)} className={`unit-toggle-btn ${zone.mode === 'auto' ? 'mode-auto' : 'mode-unit'}`} title="Toggle Unit">
-                          {zone.mode === 'auto' ? 'Auto' : (zone.mode === 'sqft' ? 'ft²' : '%')}
+                          {zone.mode === 'auto' ? 'Auto' : (zone.mode === 'sqm' ? 'm²' : '%')}
                         </button>
                       )}
                     </SelectionCard>
@@ -391,6 +395,7 @@ function LayoutGeneratorPage() {
                 imageSrc={floors[resultActiveFloorIndex]?.image}
                 zones={currentFloorResult ? currentFloorResult.zones : []}
                 dimensions={floors[resultActiveFloorIndex]?.tracerData?.dimensions}
+                areaStats={currentVariation?.area_stats} // <-- pass the area data here
               />
             </div>
 

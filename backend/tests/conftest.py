@@ -30,7 +30,7 @@ def sample_floorplan_payload():
             }
         ],
         "constraints": [
-            {"short_code": "ent", "area_value": 50, "unit": "sqft"},
+            {"short_code": "ent", "area_value": 50, "unit": "sqm"},
             {"short_code": "gen", "area_value": 20, "unit": "percent"}
         ],
         "global_parameters": {
