@@ -10,13 +10,13 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 
 import uvicorn
-from fastapi import FastAPI, Depends, HTTPException, BackgroundTasks, UploadFile, File, Form
+from fastapi import FastAPI, Depends, HTTPException, BackgroundTasks, UploadFile, File, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
+from fastapi.exceptions import RequestValidationError
 from sqlalchemy.orm import Session
 
 # Import your modules
-# Ensure these imports match your folder structure
 from floorplan.database import Base, engine, get_db, Job
 from floorplan.data_models import OptimizationRequest
 from floorplan.worker import process_optimization_job
@@ -48,6 +48,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# --- EXCEPTION HANDLER FOR 422 VALIDATION ERRORS ---
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    # Log the full error details to the console for debugging
+    print(f"Validation Error: {exc.errors()}")
+    # Return a JSON response with the error details
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors(), "body": str(exc.body)}, # Convert body to string to avoid serialization errors
+    )
 
 # ==========================================
 #  ENDPOINT GROUP 1: SHELF CALCULATOR
@@ -55,16 +65,18 @@ app.add_middleware(
 
 @app.post("/calculate-shelf")
 def calculate_shelf(
-    target_size: float = Form(...),
-    current_size: float = Form(...),
-    months: int = Form(...),
+    # Accept strings to prevent 422 if conversion is strict
+    target_size: str = Form(...),
+    current_size: str = Form(...),
+    # months is optional now, defaulting to '12' if not provided
+    months: str = Form("12"),
     raw_data: UploadFile = File(...),
-    holdings: UploadFile = File(...),
+    collection_mix: UploadFile = File(...), # Corrected parameter name
     labels: UploadFile = File(...)
 ):
     """
     Handles file uploads and generating the shelf report docx.
-    Replaces the old Flask route.
+    Accepts string inputs for numbers to handle FormData properly and converts them manually.
     """
     try:
         # Use a temporary directory to process input files safely
@@ -76,12 +88,12 @@ def calculate_shelf(
 
             # Define paths
             raw_path = os.path.join(temp_dir, raw_data.filename)
-            holdings_path = os.path.join(temp_dir, holdings.filename)
+            collection_mix_path = os.path.join(temp_dir, collection_mix.filename)
             labels_path = os.path.join(temp_dir, labels.filename)
 
             # Save inputs
             save_upload(raw_data, raw_path)
-            save_upload(holdings, holdings_path)
+            save_upload(collection_mix, collection_mix_path)
             save_upload(labels, labels_path)
 
             # Generate output filename
@@ -89,15 +101,24 @@ def calculate_shelf(
             output_filename = f"Shelf_Run_{date_str}.docx"
             output_path = os.path.join(REPORTS_FOLDER, output_filename)
 
-            # Run Logic (This assumes run_shelf_calculator is synchronous/blocking)
+            # Convert form strings to numbers
+            try:
+                t_size = float(target_size)
+                c_size = float(current_size)
+                # Handle potential float input for months gracefully
+                m_count = float(months) 
+            except ValueError:
+                return JSONResponse(status_code=400, content={"error": "Parameters must be valid numbers."})
+
+            # Run Logic
             run_shelf_calculator(
                 label_path=labels_path,
                 dataset_path=raw_path,
-                holdings_path=holdings_path,
+                collection_mix_path=collection_mix_path, # Passed as collection_mix_path
                 output_path=output_path,
-                target_size=target_size,
-                current_size=current_size,
-                months=months,
+                target_size=t_size,
+                current_size=c_size,
+                months=m_count,
             )
 
             # Return file
@@ -110,6 +131,8 @@ def calculate_shelf(
     except Exception as e:
         # Print error to console for debugging
         print(f"Error in calculate-shelf: {e}")
+        import traceback
+        traceback.print_exc()
         return JSONResponse(status_code=500, content={"error": str(e)})
 
 

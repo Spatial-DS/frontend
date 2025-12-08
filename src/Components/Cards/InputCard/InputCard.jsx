@@ -5,9 +5,10 @@ import Icon from '../../Icon/Icon';
 
 
 /**
- * A generic wrapper card with a title and icon.
+ * A generic wrapper card with a title and icon or number.
  * @param {object} props
- * @param {string} props.icon - Lucide icon name (e.g., 'ListChecks')
+ * @param {string} [props.icon] - Lucide icon name (e.g., 'ListChecks') - optional if number is used
+ * @param {string} [props.number] - A number string (e.g. "1.") to show instead of an icon
  * @param {string} props.title - The title for the card
  * @param {string} [props.subtitle] - Optional subtitle text below the title
  * @param {string} [props.contentPadding] - Optional. 'none' to remove content padding.
@@ -17,6 +18,7 @@ import Icon from '../../Icon/Icon';
 
 function InputCard({ 
   icon, 
+  number,
   title, 
   subtitle,
   contentPadding, 
@@ -36,7 +38,11 @@ function InputCard({
         <div className="header-content-group">
           {/* Use universal header row and title classes */}
           <div className="header-row">
-            <Icon name={icon} size={24} className="card-icon" />
+            {number ? (
+              <span className="card-number">{number}</span>
+            ) : (
+              <Icon name={icon} size={24} className="card-icon" />
+            )}
             <h5 className="card-title">{title}</h5>
           </div>
           {subtitle && (

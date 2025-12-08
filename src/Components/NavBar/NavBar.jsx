@@ -21,8 +21,7 @@ function Navbar() {
           <Icon name="BookOpen" size={24} style={{ color: 'rgba(var(--white), 1)' }} /> 
         </div>
         <div className='navbar-titles'>
-          <div className="navbar-title">LibraryPlan</div>
-          <div className="navbar-subtitle">Layout Planning Tool</div>
+          <div className="navbar-title">Collection Planning</div>
         </div>
       </div>
       <div className="core-features">

@@ -7,6 +7,7 @@ import '../Cards.css';
 
 function UploadCard({ 
   icon, 
+  number,
   title, 
   subtitle, 
   uploadText, 
@@ -35,7 +36,11 @@ function UploadCard({
         <div className="header-content-group">
           {/* --- DIV 1: Icon and Header (Row) --- */}
           <div className="header-row">
-            <Icon name={icon} size={24} className="card-icon" />
+            {number ? (
+              <span className="card-number">{number}</span>
+            ) : (
+              <Icon name={icon} size={24} className="card-icon" />
+            )}
             <h5 className="card-title">{title}</h5>
           </div>
 

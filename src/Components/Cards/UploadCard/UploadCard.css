@@ -1,7 +1,7 @@
 .upload-card {
   /* Inherits most styles from .card (e.g., background-color, padding, flex, etc.) */
   border: 1px solid rgba(var(--black), 0.2); /* Slight difference from .card */
-  height: 25rem; /* Specific height for this card type */
+  min-height: 25rem; /* Changed from height to min-height to allow stretching */
 }
 
 /* --- Removed all card-header, header-content-group, header-row, etc. styles --- */

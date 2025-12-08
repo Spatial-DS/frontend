@@ -2,33 +2,27 @@ import pandas as pd
 import numpy as np
 import pypandoc
 
-#Load in datasets
-label_path = "NLB update\\Filiters.xlsx"
-dataset_path = "NLB update\\CY2023 Loans and Return Collection Data.xlsx"
-holdings_path= "NLB update\\holdings.xlsx"
 
-out_path="NLB update\\shelfrun_final.docx"    # for final shelf run word doc
+
+
+
+#Load in datasets
+label_path = r"Labels.xlsx"
+dataset_path = r'CY2023 Loans and Return Collection Data.xlsx'
+holdings_path= r"Meter Run_Collection Mix.xlsx"
+
+out_path="shelfrun_final.docx"    # for final shelf run word doc
 
 constant=0.75 
 no_of_months=12
 
-label_df = pd.read_excel(label_path, dtype=str, sheet_name='Filters')
-shelf_df= pd.read_excel(label_path, dtype=str, sheet_name= 'Shelf Run')
+label_df = pd.read_excel(label_path, dtype=str, sheet_name='filters')
+shelf_df= pd.read_excel(label_path, dtype=str, sheet_name= 'shelf run')
 data_df = pd.read_excel(dataset_path)
 holding_df = pd.read_excel(holdings_path)
 
 #Calulate holdings
 holding_df['holdings']=holding_df['Target end state collection'] + holding_df['Retained']
-
-#Fn to generate holdings template
-def hold_temp(shelf_df):
-    holding_template=shelf_df[['Category','Sub category']].copy()
-    holding_template['Target end state collection']=holding_template['Retained']=''
-
-    # final_path="holdings template.xlsx"
-    # holding_template.to_excel(final_path, index=False)
-    return holding_template
-
 
 #Managing datatypes
 def set_to_float(df_col):
@@ -88,7 +82,13 @@ def assign_cat(row, filters):
     return None
 
 #Assigning filiters
-label_df = label_df.fillna('').astype(str).applymap(str.strip)
+label_df = (
+    label_df
+    .fillna('')
+    .astype(str)
+    .apply(lambda col: col.str.strip())
+)
+
 filters = label_df.to_dict(orient='records')
 
 # Assign Cat column
@@ -139,51 +139,10 @@ collated = data_df.groupby('Cat', as_index=False).agg({
 finaldf = collated.merge(shelf_df, on='Cat', how='left')
 finaldf = finaldf.merge(holding_df, on='Cat', how='left')
 
-#Hardcoding for spine/front facing (ik i did it in a dumb way)
-#Baby - English
-row1 = finaldf.loc[finaldf['Cat'] == "Children's Early Literacy Collection*Early Literacy (Baby) - English"]
-if not row1.empty:
-    #Spine row
-    spine_row=row1.copy()
-    spine_row['Loans and Renewals']=spine_row['Loans and Renewals']*0.8
-    spine_row['Returns']=spine_row['Returns']*0.8
-    spine_row['Potential RTOB Required']=spine_row['Potential RTOB Required']*0.8
-    spine_row['holdings']=spine_row['holdings']*0.8
-    spine_row['Cat'] = "Children's Early Literacy Collection*Early Literacy (Baby) - English (Spine)"
-    #Front row
-    front_row=row1.copy()
-    front_row['Loans and Renewals']=front_row['Loans and Renewals']*0.2
-    front_row['Returns']=front_row['Returns']*0.2
-    front_row['Potential RTOB Required']=front_row['Potential RTOB Required']*0.2
-    front_row['holdings']=front_row['holdings']*0.2
-    front_row['Cat'] = "Children's Early Literacy Collection*Early Literacy (Baby) - English (Front)"
-    #Remove and replace rows
-    finaldf = finaldf.drop(row1.index)
-    finaldf=pd.concat([finaldf,spine_row,front_row])
 
-#Baby - Language
-row2 = finaldf.loc[finaldf['Cat'] == "Children's Early Literacy Collection*Early Literacy (Baby) - Languages"]
-if not row2.empty:
-    #Spine row
-    spine_row=row2.copy()
-    spine_row['Loans and Renewals']=spine_row['Loans and Renewals']*0.8
-    spine_row['Returns']=spine_row['Returns']*0.8
-    spine_row['Potential RTOB Required']=spine_row['Potential RTOB Required']*0.8
-    spine_row['holdings']=spine_row['holdings']*0.8
-    spine_row['Cat'] = "Children's Early Literacy Collection*Early Literacy (Baby) - Languages (Spine)"
-    #Front row
-    front_row=row2.copy()
-    front_row['Loans and Renewals']=front_row['Loans and Renewals']*0.2
-    front_row['Returns']=front_row['Returns']*0.2
-    front_row['Potential RTOB Required']=front_row['Potential RTOB Required']*0.2
-    front_row['holdings']=front_row['holdings']*0.2
-    front_row['Cat'] = "Children's Early Literacy Collection*Early Literacy (Baby) - Languages (Front)"
-    finaldf = finaldf.drop(row2.index)
-    finaldf=pd.concat([finaldf,spine_row,front_row])
-
-
-finaldf["Vol on shelf"]=finaldf['holdings']-((finaldf['Loans and Renewals']*constant)/no_of_months)+((finaldf['Returns']*constant)/no_of_months)
+finaldf["Vol on shelf"]=finaldf['holdings']-(((finaldf['Loans and Renewals'])*constant)/no_of_months)+(((finaldf['Returns']+finaldf['Potential RTOB Required'])*constant)/no_of_months)
 finaldf["meter run"]=finaldf["Vol on shelf"]/finaldf["Avg Vol per m"]
+finaldf['meter run']=finaldf['meter run'].clip(lower=0.01)
 finaldf["Shelf run"]=finaldf["meter run"]/finaldf["No. of Tiers"]
 
 # Apply fix only to selected columns
@@ -228,25 +187,6 @@ for cat,item in category_dict.items():
     markdown_lines.append("")
 
 final_markdown="\n".join(markdown_lines)
-
-if empty_rows.empty == False:
-    empty_lines=[]
-    empty_lines.append("\n---\n")
-    empty_lines.append(f"# Summary of excluded data due to no assigned category")
-    empty_lines.append(f"## To include them ammend exsiting label files or raw data")
-    empty_text = empty_rows.to_markdown(index=False)  # index=False to skip row numbers
-    empty_lines.append(empty_text)
-    final_markdown += "\n\n" + "\n".join(empty_lines)
-
-if multiple_cat.empty == False:
-    multi_lines=[]
-    multi_lines.append("\n---\n")
-    multi_lines.append(f"# Summary of excluded data due to multiple assigned category")
-    multi_lines.append(f"## To include them ammend exsiting label files to ensure all edge cases are accounted for")
-    multi_text = multiple_cat.to_markdown(index=False)  # index=False to skip row numbers
-    multi_lines.append(empty_text)
-    final_markdown += "\n\n" + "\n".join(multi_lines)
-
 
 pypandoc.convert_text(
     final_markdown,          # your Markdown content

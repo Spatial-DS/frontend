@@ -11,7 +11,7 @@ from docx.oxml import parse_xml
 def run_shelf_calculator(
     label_path, 
     dataset_path, 
-    holdings_path, 
+    collection_mix_path, 
     output_path="shelfrun_final.docx",
     target_size=None,
     current_size=None,
@@ -40,16 +40,17 @@ def run_shelf_calculator(
             shelf_df = pd.read_excel(xls, dtype=str, sheet_name=shelf_sheet)
 
         data_df = pd.read_excel(dataset_path)
-        holding_df = pd.read_excel(holdings_path)
+        # Renamed variable to reflect file content
+        collection_mix_df = pd.read_excel(collection_mix_path)
 
     except Exception as e:
         print(f"Error loading excel files: {e}")
         return
 
     # --- 3. LOGIC ---
-    holding_df['Target end state collection'] = pd.to_numeric(holding_df['Target end state collection'], errors='coerce').fillna(0)
-    holding_df['Retained'] = pd.to_numeric(holding_df['Retained'], errors='coerce').fillna(0)
-    holding_df['holdings'] = holding_df['Target end state collection'] + holding_df['Retained']
+    collection_mix_df['Target end state collection'] = pd.to_numeric(collection_mix_df['Target end state collection'], errors='coerce').fillna(0)
+    collection_mix_df['Retained'] = pd.to_numeric(collection_mix_df['Retained'], errors='coerce').fillna(0)
+    collection_mix_df['holdings'] = collection_mix_df['Target end state collection'] + collection_mix_df['Retained']
 
     def set_to_float(df_col):
         return pd.to_numeric(df_col, errors='coerce').fillna(0)
@@ -64,14 +65,14 @@ def run_shelf_calculator(
     data_df['Loans and Renewals'] = set_to_float(data_df['Loans and Renewals'])
     data_df['Returns'] = set_to_float(data_df['Returns'])
     data_df['Potential RTOB Required'] = set_to_float(data_df['Potential RTOB Required'])
-    holding_df['holdings'] = set_to_float(holding_df['holdings'])
+    collection_mix_df['holdings'] = set_to_float(collection_mix_df['holdings'])
 
     def create_cat(df):
         df['Cat'] = df['Category'].astype(str).str.strip() + "*" + df['Sub category'].astype(str).str.strip()
 
     create_cat(label_df)
     create_cat(shelf_df)
-    create_cat(holding_df)
+    create_cat(collection_mix_df)
 
     def pass_filiter(row, filt):
         for col, filt_val in filt.items():
@@ -102,17 +103,6 @@ def run_shelf_calculator(
     print("Assigning categories...")
     data_df['Cat'] = data_df.apply(lambda row: assign_cat(row, filters), axis=1)
 
-    # --- FLAGGING ISSUES ---
-    empty_rows = (
-        data_df[data_df['Cat'].isna()]
-        .groupby(
-            ['Item Language','Item Age Lvl','Item Fiction Tag','Item Subject Suffix','Item DDC Class','Item Collection Code'],
-            dropna=False
-        )
-        .sum(numeric_only=True)
-        .reset_index()
-    )
-
     collated = data_df.groupby('Cat', as_index=False).agg({
         'Loans and Renewals': 'sum',
         'Returns': 'sum',
@@ -120,7 +110,7 @@ def run_shelf_calculator(
     })
 
     finaldf = collated.merge(shelf_df, on='Cat', how='left')
-    finaldf = finaldf.merge(holding_df, on='Cat', how='left')
+    finaldf = finaldf.merge(collection_mix_df, on='Cat', how='left')
 
     def split_collection(df, original_cat, spine_suffix, front_suffix):
         row = df.loc[df['Cat'] == original_cat]
@@ -138,8 +128,10 @@ def run_shelf_calculator(
     finaldf = split_collection(finaldf, "Children's Early Literacy Collection*Early Literacy (Baby) - English", "Early Literacy (Baby) - English (Spine)", "Early Literacy (Baby) - English (Front)")
     finaldf = split_collection(finaldf, "Children's Early Literacy Collection*Early Literacy (Baby) - Languages", "Early Literacy (Baby) - Languages (Spine)", "Early Literacy (Baby) - Languages (Front)")
 
-    finaldf["Vol on shelf"] = finaldf['holdings'] - ((finaldf['Loans and Renewals']*constant)/no_of_months) + ((finaldf['Returns']*constant)/no_of_months)
+    finaldf["Vol on shelf"]=finaldf['holdings']-(((finaldf['Loans and Renewals'])*constant)/no_of_months)+(((finaldf['Returns']+finaldf['Potential RTOB Required'])*constant)/no_of_months)
     finaldf["meter run"] = finaldf["Vol on shelf"] / finaldf["Avg Vol per m"]
+    finaldf['meter run']=finaldf['meter run'].clip(lower=0.01)
+
     finaldf["Shelf run"] = finaldf["meter run"] / finaldf["No. of Tiers"]
 
     def fix_apostrophes(s):
@@ -186,51 +178,6 @@ def run_shelf_calculator(
             s_run = row['Shelf run']
             row_cells[3].text = f"{s_run:.1f}" if pd.notnull(s_run) else "0.0"
         doc.add_paragraph() 
-
-    # --- NEW: Detailed Excluded Data Table ---
-    if not empty_rows.empty:
-        doc.add_page_break()
-        doc.add_heading('Summary of Excluded Data', level=1)
-        doc.add_paragraph("To include them amend existing label files or raw data.")
-        
-        # Define all requested columns
-        cols_to_show = [
-            'Item Language', 'Item Age Lvl', 'Item Fiction Tag', 
-            'Item Subject Suffix', 'Item DDC Class', 'Item Collection Code', 
-            'Loans and Renewals', 'Returns', 'Potential RTOB Required'
-        ]
-        
-        # Create table with headers
-        table = doc.add_table(rows=1, cols=len(cols_to_show))
-        table.style = 'Table Grid'
-        
-        # Header
-        hdr_cells = table.rows[0].cells
-        for i, col_name in enumerate(cols_to_show):
-            hdr_cells[i].text = col_name
-            # Reduce font size for headers to fit
-            for paragraph in hdr_cells[i].paragraphs:
-                for run in paragraph.runs:
-                    run.font.size = Pt(8)
-                    run.font.bold = True
-            shading_elm = parse_xml(r'<w:shd {} w:fill="D9D9D9"/>'.format(nsdecls('w')))
-            hdr_cells[i]._tc.get_or_add_tcPr().append(shading_elm)
-
-        # Rows
-        for _, row in empty_rows.iterrows():
-            row_cells = table.add_row().cells
-            for i, col_name in enumerate(cols_to_show):
-                val = row.get(col_name, '')
-                # Format numbers to look cleaner
-                if col_name in ['Loans and Renewals', 'Returns', 'Potential RTOB Required']:
-                    row_cells[i].text = str(int(val)) if pd.notnull(val) else "0"
-                else:
-                    row_cells[i].text = str(val)
-                
-                # Reduce font size for data rows too
-                for paragraph in row_cells[i].paragraphs:
-                    for run in paragraph.runs:
-                        run.font.size = Pt(8)
 
     doc.save(output_path)
     print(f"Generated: {output_path}")

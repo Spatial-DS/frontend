@@ -4,7 +4,7 @@
   background-color: rgba(var(--blue), 0.1);
   border-radius: 10rem; /* Pill shape */
   padding: 0.5rem;
-  width: 50%;
+  width: 100%; /* Changed from 50% to allow parent to control width */
   border: 1px solid rgba(var(--blue), 1);
   justify-content: center;
 }
@@ -18,7 +18,8 @@
   transition: all 0.2s ease-in-out;
   width: 100%;
   text-align: center;
-  color: rgba(var(--blue), 1)
+  color: rgba(var(--blue), 1);
+  white-space: nowrap; /* Prevent text wrapping */
 }
 
 .chip-option.active {

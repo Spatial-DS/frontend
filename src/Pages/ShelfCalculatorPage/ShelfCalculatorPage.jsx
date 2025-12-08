@@ -7,26 +7,44 @@ import UploadCard from '../../Components/Cards/UploadCard/UploadCard';
 import InputCard from '../../Components/Cards/InputCard/InputCard';   
 import ResultsCard from '../../Components/Cards/ResultsCard/ResultsCard';
 import GuideCard from '../../Components/Cards/GuideCard/GuideCard'; 
+import Icon from '../../Components/Icon/Icon'; 
 import './ShelfCalculatorPage.css';
 
 function ShelfCalculatorPage() {
-  const [activeChip, setActiveChip] = useState('input');
-  const [numMonths, setNumMonths] = useState('');
-  const [targetSize, setTargetSize] = useState('');
-  const [currentSize, setCurrentSize] = useState('');
+  const [activeChip, setActiveChip] = useState('labels'); 
   
+  // Initialize state from localStorage if available
+  const [targetSize, setTargetSize] = useState(() => localStorage.getItem('shelf_target_size') || '');
+  const [currentSize, setCurrentSize] = useState(() => localStorage.getItem('shelf_current_size') || '');
+  
+  // Simple message string state for save confirmation
+  const [saveMessage, setSaveMessage] = useState('');
+
   const [rawFile, setRawFile] = useState(null);
-  const [holdingsFile, setHoldingsFile] = useState(null);
+  const [collectionMixFile, setCollectionMixFile] = useState(null);
   const [downloadUrl, setDownloadUrl] = useState(null);
-  const [downloadName, setDownloadName] = useState("Shelf_Run_Report.docx"); // Store name for download button
+  const [downloadName, setDownloadName] = useState("Shelf_Run_Report.docx"); 
 
   const [isLoading, setIsLoading] = useState(false);
   const [resultsReady, setResultsReady] = useState(false);
   const calculationTimeoutRef = useRef(null);
 
+  // --- LABELS STATE ---
+  const [currentLabelFile, setCurrentLabelFile] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('settings_label_file_meta')); } catch (e) { return null; }
+  });
+
   useEffect(() => {
     return () => { if (calculationTimeoutRef.current) clearTimeout(calculationTimeoutRef.current); };
   }, []);
+
+  // Persist label settings (Meta only, data is saved on upload)
+  useEffect(() => {
+    if (currentLabelFile) {
+      localStorage.setItem('settings_label_file_meta', JSON.stringify(currentLabelFile));
+    }
+  }, [currentLabelFile]);
+
 
   const dataURLtoFile = (dataurl, filename) => {
     if(!dataurl) return null;
@@ -42,13 +60,90 @@ function ShelfCalculatorPage() {
     if (files && files[0]) setRawFile(files[0]);
   };
 
-  const handleHoldingsUpload = (files) => {
-    if (files && files[0]) setHoldingsFile(files[0]);
+  const handleCollectionMixUpload = (files) => {
+    if (files && files[0]) setCollectionMixFile(files[0]);
   };
 
-  const handleDownloadHoldings = () => {
+  const generateCollectionMixTemplateData = (jsonData) => {
+    const validRows = jsonData.filter(row => {
+        const sub = row['Sub category'] ? String(row['Sub category']) : '';
+        return (row['Category'] && row['Sub category'] && !sub.includes('(Spine)') && !sub.includes('(Front)'));
+    });
+    
+    const collectionMixData = validRows.map(row => ({
+      'Category': row['Category'],
+      'Sub category': row['Sub category'],
+      'Target end state collection': '', 
+      'Retained': ''                     
+    }));
+
+    localStorage.setItem('generated_collection_mix_structure', JSON.stringify(collectionMixData));
+    console.log(`Generated Collection Mix Template structure with ${collectionMixData.length} rows.`);
+  };
+
+  const handleLabelUpload = (files) => {
+    if (files.length > 0) {
+      const file = files[0];
+      const today = new Date().toISOString().split('T')[0];
+      
+      setCurrentLabelFile({ name: file.name, date: today, size: (file.size / 1024).toFixed(1) + ' KB' });
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          
+          const shelfRunSheetName = workbook.SheetNames.find(s => s.toLowerCase().trim() === 'shelf run');
+          if (shelfRunSheetName) {
+             const ws = workbook.Sheets[shelfRunSheetName];
+             const rawJson = XLSX.utils.sheet_to_json(ws);
+             generateCollectionMixTemplateData(rawJson);
+          }
+        } catch (error) {
+          console.error("Error parsing Excel file:", error);
+          alert("Failed to read file structure. Please ensure it is a valid Excel file.");
+        }
+      };
+      reader.readAsArrayBuffer(file);
+
+      const storageReader = new FileReader();
+      storageReader.onload = (e) => {
+          localStorage.setItem('settings_label_file_data', e.target.result);
+      };
+      storageReader.readAsDataURL(file);
+    }
+  };
+
+  const handleDownloadTemplate = () => {
+    const link = document.createElement('a');
+    link.href = '/Labels.xlsx'; 
+    link.setAttribute('download', 'Labels.xlsx'); 
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleDownloadCurrentLabels = () => {
+    const labelBase64 = localStorage.getItem('settings_label_file_data');
+    const labelMeta = JSON.parse(localStorage.getItem('settings_label_file_meta'));
+
+    if (labelBase64 && labelMeta) {
+      const link = document.createElement('a');
+      link.href = labelBase64;
+      // Requirement: Download as "Existing Labels"
+      link.setAttribute('download', 'Existing Labels.xlsx');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+        alert("No existing labels file found.");
+    }
+  };
+
+  const handleDownloadCollectionMix = () => {
     try {
-      const storedStructure = localStorage.getItem('generated_holdings_structure');
+      const storedStructure = localStorage.getItem('generated_collection_mix_structure');
       let dataToExport;
       if (storedStructure) {
         dataToExport = JSON.parse(storedStructure);
@@ -62,27 +157,34 @@ function ShelfCalculatorPage() {
       const ws = XLSX.utils.json_to_sheet(dataToExport);
       ws['!cols'] = [{ wch: 35 }, { wch: 35 }, { wch: 25 }, { wch: 15 }];
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Holdings Template");
-      XLSX.writeFile(wb, "Holdings_Template.xlsx");
+      XLSX.utils.book_append_sheet(wb, ws, "Collection Mix Template");
+      XLSX.writeFile(wb, "Collection_Mix_Template.xlsx");
     } catch (error) {
       console.error("Error generating template:", error);
     }
   };
 
+  const handleSaveInputs = () => {
+    localStorage.setItem('shelf_target_size', targetSize);
+    localStorage.setItem('shelf_current_size', currentSize);
+    setSaveMessage('Inputs saved!');
+    setTimeout(() => setSaveMessage(''), 3000);
+  };
+
   const handleCalculate = async () => {
-    if (!numMonths || !targetSize || !currentSize) {
+    if (!targetSize || !currentSize) {
         alert("Please fill in all parameters.");
         return;
     }
-    if (!rawFile || !holdingsFile) {
-        alert("Please upload both Raw Data and Holdings files.");
+    if (!rawFile || !collectionMixFile) {
+        alert("Please upload both Raw Data and Collection Mix files.");
         return;
     }
 
     const storedLabelMeta = JSON.parse(localStorage.getItem('settings_label_file_meta'));
     const labelBase64 = localStorage.getItem('settings_label_file_data'); 
     if (!labelBase64) {
-        alert("Label file not found. Please go to Settings and upload your Labels file first.");
+        alert("Label file not found. Please go to 'Labels Set Up' tab and upload your Labels file first.");
         return;
     }
     const labelFile = dataURLtoFile(labelBase64, storedLabelMeta?.name || "Labels.xlsx");
@@ -92,11 +194,10 @@ function ShelfCalculatorPage() {
     try {
         const formData = new FormData();
         formData.append('raw_data', rawFile);
-        formData.append('holdings', holdingsFile);
+        formData.append('collection_mix', collectionMixFile);
         formData.append('labels', labelFile);
         formData.append('target_size', targetSize);
         formData.append('current_size', currentSize);
-        formData.append('months', numMonths);
 
         const response = await fetch('http://localhost:8000/calculate-shelf', {
             method: 'POST',
@@ -108,7 +209,6 @@ function ShelfCalculatorPage() {
             throw new Error(errData.error || "Calculation failed on server.");
         }
 
-        // Get Filename from headers for history
         const contentDisposition = response.headers.get('Content-Disposition');
         let serverFileName = `Shelf_Run_${new Date().toISOString().slice(0,10)}.docx`;
         
@@ -120,12 +220,10 @@ function ShelfCalculatorPage() {
         }
         setDownloadName(serverFileName);
 
-        // Get file blob
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         setDownloadUrl(url); 
         
-        // --- SAVE TO HISTORY ---
         const newHistoryItem = {
           id: Date.now(),
           name: serverFileName,
@@ -164,33 +262,82 @@ function ShelfCalculatorPage() {
     if (calculationTimeoutRef.current) clearTimeout(calculationTimeoutRef.current);
   };
 
-  const guideSteps = [
-    "Fill in the fields in Parameters.",
-    "Upload Raw Data from NLB Database as an Excel file with loans and return collection data.",
-    "Click 'Download Holdings Template'.", 
-    "Open the template and fill in the 'Target end state collection' and 'Retained' columns.",
-    "Upload the completed Holdings file.",
-    "Press the calculate button to receive a downloadable formatted Word document."
+  const filtersInstructions = [
+    "You may edit the file, but maintain the existing format.",
+    "Use 'NOT IN:' to exclude rows.",
+    "Use 'or' to include rows matching either option.",
+    "Do not modify 'Spine' or 'Front Facing' rows."
   ];
 
-  const guideSubtitle = "Before you get started, make sure you have downloaded and uploaded the amended Labelling Template in the Settings Page.";
+  const shelfRunInstructions = [
+    "Fill in 'Avg Vol per m' and 'No. of Tiers'.",
+    "Columns A and B are automatically populated."
+  ];
 
   return (
     <div className="shelf-calculator-page">
-      <ChipProgress activeChip={activeChip} onChipClick={setActiveChip} />
+      <div style={{width: '66%'}}> 
+        <ChipProgress 
+            activeChip={activeChip} 
+            onChipClick={setActiveChip} 
+            chipLabels={{ labels: 'Labels Set Up', input: 'Input Files', results: 'Results' }} 
+        />
+      </div>
+
+      {activeChip === 'labels' && (
+        <div className="card-grid">
+             <div className="card-row">
+                <div style={{flex: 1}}>
+                    <GuideCard title="Filters Sheet Instructions" subtitle="Rules for editing the Filters tab:" steps={filtersInstructions} />
+                </div>
+                <div style={{flex: 1}}>
+                    <GuideCard title="Shelf Run Sheet Instructions" subtitle="Rules for editing the Shelf Run tab:" steps={shelfRunInstructions} />
+                </div>
+             </div>
+
+             <div className="card-row">
+                <UploadCard 
+                    icon="FileUp" 
+                    title="Label File Management" 
+                    subtitle={
+                        <>
+                            1. Click on Download Template to download and amend Labels (Refer to the 2 cards on top for instructions for each sheet in the Label File)<br/>
+                            2. Click on Browse Files to upload your Labels<br/>
+                            3. Click Next to move on to the new step<br/>
+                            4. If you need to view your existing labels, click on the Download Existing Labels button
+                        </>
+                    } 
+                    uploadText={currentLabelFile ? `Using: ${currentLabelFile.name}` : "Upload new labels file"} 
+                    formatText={currentLabelFile ? `Uploaded on ${currentLabelFile.date} • ${currentLabelFile.size}` : "Excel (.xlsx)"}
+                    buttonText="Browse Files" 
+                    onFileSelect={handleLabelUpload} 
+                    headerActions={
+                        <div style={{display: 'flex', gap: '0.5rem'}}>
+                            {currentLabelFile && (
+                                <Button variant="outline" size="small" onClick={handleDownloadCurrentLabels}>Download Existing Labels</Button>
+                            )}
+                            <Button variant="default" size="small" onClick={handleDownloadTemplate}>Download Template</Button>
+                        </div>
+                    }
+                />
+             </div>
+        </div>
+      )}
 
       {activeChip === 'input' && (
         <div className="card-grid">
             <div className="card-row">
-                <GuideCard steps={guideSteps} subtitle={guideSubtitle} />
-                <InputCard icon="Ruler" title="Parameters">
+                <GuideCard steps={[
+                  "Fill in fields in Parameters",
+                  "Upload Raw Data from QlikSense as an excel file",
+                  "Upload the completed 'Collection Mix' excel file",
+                  "Press the calculate button to receive a downloadable formatted Word document"
+                ]} 
+                subtitle="Before you get started, make sure you have downloaded and uploaded the amended Labelling Template in the 'Labels Set Up' tab." title="How to Use Guide" />
+                <InputCard number="1." title="Parameters">
                 <div className="form-content">
                     <p className="form-subtitle">α = target collection size / current collection size</p>
                     <div className="form-group">
-                        <div className="input-wrapper">
-                            <label>Number of Months</label>
-                            <input type="number" value={numMonths} onChange={(e) => setNumMonths(e.target.value)} placeholder="E.g. 12" />
-                        </div>
                         <div className="input-row">
                             <div className="input-wrapper">
                                 <label>Target Collection Size</label>
@@ -208,22 +355,33 @@ function ShelfCalculatorPage() {
 
             <div className="card-row">
                 <UploadCard
-                    icon="Library" 
-                    title="Raw Data from NLB Database"
-                    subtitle={<>Upload your Excel file with loans and return collection data.<br /><span style={{ visibility: 'hidden', lineHeight: '1.5em' }}>&nbsp;</span></>}
-                    uploadText={rawFile ? `Uploaded: ${rawFile.name}` : "Upload the Raw Data spreadsheet"}
+                    number="2."
+                    title="Raw Data from QlikSense"
+                    subtitle={<>Steps: <br />
+                      1. Go to QlikSense <br />
+                      2. Under Streams, select "Everyone" <br />
+                      3. Select "Circulation - [ALL]" <br />
+                      4. Under Community, select "Collection Mix" <br />
+                      5. Under the filter "Txn Calendar Year", choose a year to view data for the full year <br />
+                      6. Under the filter "Item Branch Code", select the branch <br />
+                      7. Under the filter "Select Item Media", select "BOOK-Book" <br />
+                      8. Download the data<br /></>}
+                    uploadText={rawFile ? `Uploaded: ${rawFile.name}` : "Upload your spreadsheet"}
                     formatText="Excel (.xlsx), CSV"
                     onFileSelect={handleRawDataUpload}
                 />
 
                 <UploadCard
-                  icon="Target" 
-                  title="Holdings"
-                  subtitle="Upload your Excel file with Target End State and Retained Collection."
-                  uploadText={holdingsFile ? `Uploaded: ${holdingsFile.name}` : "Upload your target end state spreadsheet"}
+                  number="3." 
+                  title="Collection Mix"
+                  subtitle={<>Steps: <br />
+                  1. Download "Collection Mix" template <br />
+                  2. Fill in the figures for "Target end state collection" and "Retained collection".
+                  </>}
+                  uploadText={collectionMixFile ? `Uploaded: ${collectionMixFile.name}` : "Upload your spreadsheet"}
                   formatText="Excel (.xlsx), CSV"
-                  onFileSelect={handleHoldingsUpload}
-                  headerActions={<Button variant="default" onClick={handleDownloadHoldings}>Download Holdings Template</Button>}
+                  onFileSelect={handleCollectionMixUpload}
+                  headerActions={<Button variant="default" onClick={handleDownloadCollectionMix}>Download Collection Mix Template</Button>}
                 />
             </div>
         </div>
@@ -249,8 +407,14 @@ function ShelfCalculatorPage() {
           isLoading ? (
             <><Button variant="danger-outline" onClick={handleCancel}>Cancel</Button><Button variant="default" disabled>Calculating...</Button></>
           ) : (
-            <Button variant="default" onClick={handleCalculate}>Calculate</Button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                {saveMessage && <span className="save-message">{saveMessage}</span>}
+                <Button variant="outline" onClick={handleSaveInputs}>Save Inputs</Button>
+                <Button variant="default" onClick={handleCalculate}>Calculate</Button>
+            </div>
           )
+        ) : activeChip === 'labels' ? (
+             <Button variant="default" onClick={() => setActiveChip('input')}>Next: Input Files</Button>
         ) : (
           <Button variant="default" onClick={() => {setActiveChip('input'); setResultsReady(false);}}>Restart Calculation</Button>
         )}
