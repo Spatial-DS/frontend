@@ -1,18 +1,20 @@
 .selection-card {
   display: flex;
   flex-direction: column;
-  align-items: flex-start; /* Align items to start for better layout with input */
-  justify-content: center;
-  gap: 0.75rem; /* Space between icon/title and input */
+  align-items: flex-start;
+  /* CHANGED: Push content apart so inputs align at the bottom */
+  justify-content: space-between; 
+  gap: 0.75rem;
   padding: 1rem;
   border-radius: 0.5rem;
   border: 1px solid rgba(var(--black), 0.2);
   background-color: rgba(var(--white), 1);
   cursor: pointer;
   transition: all 0.2s ease;
-  text-align: left; /* Align text left */
-  min-height: 100px;
-  width: 100%; /* Ensure it fills the grid cell */
+  text-align: left;
+  min-height: 160px; /* INCREASED: Ensure enough height for 3-line titles + input */
+  height: 100%; /* CHANGED: Fill the grid cell height */
+  width: 100%;
 }
 
 .selection-card:hover {
@@ -30,10 +32,11 @@
 /* --- Top Section (Icon + Title) --- */
 .selection-content-top {
     display: flex;
-    flex-direction: row; /* Side by side */
-    align-items: center;
+    flex-direction: row;
+    align-items: flex-start; /* Align icon with top of title if title wraps */
     gap: 0.75rem;
     width: 100%;
+    flex: 1; /* Allow this section to grow/shrink */
 }
 
 .selection-icon {
@@ -42,6 +45,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-top: 2px; /* Slight adjustment for alignment with text */
 }
 
 .selection-card.selected .selection-icon {
@@ -65,7 +69,7 @@
     flex-direction: column;
     gap: 0.25rem;
     width: 100%;
-    margin-top: 0.25rem;
+    margin-top: auto; /* Push to bottom if flex spacing doesn't cover it */
     padding-top: 0.75rem;
     border-top: 1px solid rgba(var(--blue), 0.2);
     animation: fadeIn 0.2s ease-in-out;
@@ -96,7 +100,6 @@
     transition: all 0.2s ease;
 }
 
-/* REQUIREMENT 1: Grayed out style */
 .selection-area-input:disabled {
     background-color: #f2f2f2;
     color: #999;

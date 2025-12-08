@@ -19,7 +19,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr; /* Original 50/50 split */
   gap: 1.5rem;
-  align-items: flex-start;
+  align-items: stretch;
 }
 
 .layout-column-left,
@@ -116,11 +116,30 @@
 
 .no-results-message {
   width: 100%;
-  padding: 4rem;
-  text-align: center;
-  background: white;
+  background-color: rgba(255, 255, 255, 1);
   border-radius: 1rem;
-  border: 1px solid rgba(0,0,0,0.1);
+  padding: 4rem 2rem;
+  border: 1px solid rgba(0, 0, 0, 0.1); 
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.no-results-message h3 {
+  font-family: 'Urbanist', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: rgba(52, 58, 64, 1);
+  margin-bottom: 0.5rem;
+}
+
+.no-results-message p {
+  font-size: 1rem;
+  color: rgba(52, 58, 64, 0.6);
+  max-width: 400px;
+  line-height: 1.5;
 }
 
 .page-actions {

@@ -33,7 +33,15 @@ import {
   User,
   Lock,
   HelpCircle,
-  AlertCircle // Default
+  AlertCircle,
+  // --- NEW ADDITIONS ---
+  Coffee,
+  Footprints,
+  Image,
+  Briefcase,
+  Package,
+  UsersRound,
+  Archive
 } from 'lucide-react';
 
 // Map string names to the actual components
@@ -71,13 +79,22 @@ const iconMap = {
   User,
   Lock,
   HelpCircle,
+  AlertCircle,
+  // --- NEW MAPPINGS ---
+  Coffee,
+  Footprints,
+  Image,
+  Briefcase,
+  Package,
+  UsersRound,
+  Archive,
   default: AlertCircle
 };
 
 /**
  * Renders a Lucide icon based on a string name.
  * @param {object} props
- * @param {string} props.name - The name of the lucide icon (e.g., "BookOpen").
+ * @param {string} props.name - The name of the lucide icon.
  * @param {number} props.size - The size of the icon.
  * @param {string} props.className - Additional CSS classes.
  */

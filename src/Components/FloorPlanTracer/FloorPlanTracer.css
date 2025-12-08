@@ -5,6 +5,32 @@
     height: 100%;
 }
 
+/* NEW INSTRUCTION BLOCK STYLES */
+.tracer-instructions {
+    background-color: #f8f9fa;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
+    color: #444;
+}
+
+.tracer-instructions strong {
+    display: block;
+    margin-bottom: 0.25rem;
+    color: #333;
+}
+
+.tracer-instructions ol {
+    margin: 0;
+    padding-left: 1.25rem;
+    line-height: 1.4;
+}
+
+.tracer-instructions li {
+    margin-bottom: 0.25rem;
+}
+
 .tracer-toolbar {
     display: flex;
     align-items: center;

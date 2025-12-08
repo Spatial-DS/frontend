@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import './LayoutGeneratorPage.css';
 
 import UploadCard from '../../Components/Cards/UploadCard/UploadCard';
@@ -14,22 +16,22 @@ import Icon from '../../Components/Icon/Icon';
 import ResultVisualizer from '../../Components/ResultVisualizer/ResultVisualizer';
 
 export const INITIAL_ZONES = [
-  { short: 'ent', title: 'Entrance', icon: 'Library', isSelected: true, mode: 'percent', area: 1, color: '#3366cc' },
-  { short: 'lob', title: 'Lobby/Transition', icon: 'PersonStanding', isSelected: true, mode: 'auto', area: '', color: '#cc9933' },
-  { short: 'bdr', title: 'Bookdrop', icon: 'Archive', isSelected: true, mode: 'sqm', area: 10, color: '#ff8800' },
+  { short: 'ent', title: 'Entrance', icon: 'DoorOpen', isSelected: true, mode: 'percent', area: 1, color: '#3366cc' },
+  { short: 'lob', title: 'Lobby / Transition', icon: 'PersonStanding', isSelected: true, mode: 'auto', area: '', color: '#cc9933' },
+  { short: 'bdr', title: 'Bookdrop', icon: 'ArchiveRestore', isSelected: true, mode: 'sqm', area: 10, color: '#ff8800' },
   { short: 'loc', title: 'Reservation Lockers', icon: 'Package', isSelected: true, mode: 'sqm', area: 3, color: '#8844cc' },
-  { short: 'met', title: 'Meeting Rooms', icon: 'DoorOpen', isSelected: true, mode: 'auto', area: '', color: '#008877' },
+  { short: 'met', title: 'Meeting Rooms', icon: 'Users', isSelected: true, mode: 'auto', area: '', color: '#008877' },
   { short: 'sty', title: 'Study Area', icon: 'BookOpen', isSelected: true, mode: 'auto', area: '', color: '#66aadd' },
   { short: 'adl', title: 'Adult Collection', icon: 'Library', isSelected: true, mode: 'percent', area: 35, color: '#2e7d32' },
   { short: 'exh', title: 'Exhibitions', icon: 'Image', isSelected: false, mode: 'percent', area: 5, color: '#cc2288' },
-  { short: 'prg', title: 'Programming Space', icon: 'Users', isSelected: true, mode: 'percent', area: 5, color: '#ddaa00' },
-  { short: 'chd', title: "Children's Collection", icon: 'Palette', isSelected: true, mode: 'percent', area: 10, color: '#ffdd33' },
+  { short: 'prg', title: 'Programming Space', icon: 'Monitor', isSelected: true, mode: 'percent', area: 5, color: '#ddaa00' },
+  { short: 'chd', title: "Children's Collection", icon: 'Baby', isSelected: true, mode: 'percent', area: 10, color: '#ffdd33' },
   { short: 'com', title: 'Community Owned Space', icon: 'UsersRound', isSelected: false, mode: 'percent', area: 5, color: '#8d6e63' },
-  { short: 'yth', title: 'Youth Collection', icon: 'Users', isSelected: true, mode: 'percent', area: 5, color: '#00bcd4' },
-  { short: 'stf', title: 'Staff Areas (e.g. Back-of-House)', icon: 'Briefcase', isSelected: true, mode: 'percent', area: 10, color: '#555555' },
+  { short: 'yth', title: 'Youth Collection', icon: 'User', isSelected: true, mode: 'percent', area: 5, color: '#00bcd4' },
+  { short: 'stf', title: 'Staff Areas', icon: 'Briefcase', isSelected: true, mode: 'percent', area: 10, color: '#555555' },
   { short: 'toi', title: 'Toilets', icon: 'Toilet', isSelected: true, mode: 'sqm', area: 15, color: '#bbbbbb' },
   { short: 'caf', title: 'Cafe', icon: 'Coffee', isSelected: false, mode: 'percent', area: 5, color: '#cc3333' },
-  { short: 'esc', title: 'Stairs/Escalators/Lifts', icon: 'Stairs', isSelected: true, mode: 'sqm', area: 10, color: '#888888' },
+  { short: 'esc', title: 'Stairs / Lifts / Escalators', icon: 'Footprints', isSelected: true, mode: 'sqm', area: 10, color: '#888888' },
 ];
 
 const API_BASE_URL = "http://localhost:8000";
@@ -55,6 +57,11 @@ function LayoutGeneratorPage() {
   const [resultActiveFloorIndex, setResultActiveFloorIndex] = useState(0);
   const [selectedVariationIndex, setSelectedVariationIndex] = useState(0);
   const [apiResult, setApiResult] = useState(null);
+  
+  // State to control visibility of the print template
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
+  const pollIntervalRef = useRef(null);
 
   // Persistence
   const [zoneSettings, setZoneSettings] = useState(() => {
@@ -88,6 +95,12 @@ function LayoutGeneratorPage() {
   useEffect(() => {
     localStorage.setItem('library_zone_settings', JSON.stringify(zoneSettings));
   }, [zoneSettings]);
+
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+    };
+  }, []);
 
   // Handlers
   const handleZoneToggle = (index) => {
@@ -149,7 +162,6 @@ function LayoutGeneratorPage() {
     setIsLoading(true);
     setStatusMessage("Validating inputs...");
 
-    // Validation
     const activeZones = zoneSettings.filter(z => z.isSelected);
     if (activeZones.length === 0 || floors.length === 0) {
       alert("Please select zones and upload a floorplan.");
@@ -168,7 +180,7 @@ function LayoutGeneratorPage() {
       const floorPlansPayload = floors.map(f => {
         const tData = f.tracerData;
         const boundary = tData.floorplan.map(p => [p.x, p.y]);
-        const walls = tData.columns ? tData.columns.map(poly => poly.map(p => [p.x, p.y])) : [];
+        const walls = []; 
         const fixedElements = {};
         if (tData.entrance) fixedElements.ent = tData.entrance.map(p => [p.x, p.y]);
         if (tData.bookdrops) fixedElements.bdr = tData.bookdrops.map(p => [p.x, p.y]);
@@ -213,23 +225,24 @@ function LayoutGeneratorPage() {
       if (!response.ok) throw new Error("Failed to submit job");
       const { job_id } = await response.json();
 
-      setStatusMessage("Optimizing layout...");
-      const pollInterval = setInterval(async () => {
+      setStatusMessage("Optimizing Layout...");
+      
+      pollIntervalRef.current = setInterval(async () => {
         try {
           const statusRes = await fetch(`${API_BASE_URL}/jobs/${job_id}`);
           const statusData = await statusRes.json();
           if (statusData.status === 'completed') {
-            clearInterval(pollInterval);
+            clearInterval(pollIntervalRef.current);
             setApiResult(statusData.result);
             setResultsReady(true);
             setIsLoading(false);
             setActiveChip('results');
           } else if (statusData.status === 'failed') {
-            clearInterval(pollInterval);
+            clearInterval(pollIntervalRef.current);
             throw new Error(statusData.error || "Failed");
           }
         } catch (err) {
-          clearInterval(pollInterval);
+          clearInterval(pollIntervalRef.current);
           alert("Error: " + err.message);
           setIsLoading(false);
         }
@@ -240,32 +253,84 @@ function LayoutGeneratorPage() {
     }
   };
 
+  const handleCancel = () => {
+    if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+    }
+    setIsLoading(false);
+    setStatusMessage('');
+  };
+
   const handleRestart = () => { setResultsReady(false); setActiveChip('input'); setApiResult(null); };
+  
+  // PDF Download Handler
+  const handleDownloadPDF = async () => {
+    setIsGeneratingPdf(true);
+    // Short delay to allow the hidden div to render with all variations
+    setTimeout(async () => {
+        // Select all the page containers we created
+        const pageElements = document.querySelectorAll('.pdf-page-to-print');
+        if (!pageElements || pageElements.length === 0) {
+            setIsGeneratingPdf(false);
+            return;
+        }
+
+        try {
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfWidth = 210;
+            const pdfHeight = 297;
+
+            // Iterate over each page element and add it to the PDF
+            for (let i = 0; i < pageElements.length; i++) {
+                const pageEl = pageElements[i];
+                
+                // Capture this specific page element
+                const canvas = await html2canvas(pageEl, { 
+                    scale: 2, 
+                    useCORS: true,
+                    logging: false
+                });
+                
+                const imgData = canvas.toDataURL('image/png');
+                const imgProps = pdf.getImageProperties(imgData);
+                // Scale to fit width
+                const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                
+                // If not the first page, add a new one
+                if (i > 0) {
+                    pdf.addPage();
+                }
+                
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, imgHeight);
+            }
+            
+            pdf.save("Library_Layout_Report.pdf");
+        } catch (err) {
+            console.error("PDF Generation failed", err);
+            alert("Failed to generate PDF");
+        } finally {
+            setIsGeneratingPdf(false);
+        }
+    }, 1000); // 1 second delay to ensure large DOM renders
+  };
+
   const currentFloor = floors.find(f => f.id === activeTab);
-
-
 
   // Result Prep
   const variations = apiResult?.variations || [];
-
   const currentVariation = variations[selectedVariationIndex];
-
   const currentFloorResult = currentVariation
     ? currentVariation.layouts.find(l => l.floor_name === floors[resultActiveFloorIndex]?.name)
     : null;
 
   // --- HELPER COMPONENT: ZONE GRID ---
-  const ZoneGrid = ({ zones }) => {
+  const ZoneGrid = ({ zones, areaStats }) => {
     const statsMap = {};
-
-    // Read stats directly from the selected variation
-    if (currentVariation && currentVariation.area_stats) {
-      currentVariation.area_stats.forEach(s => {
+    if (areaStats) {
+      areaStats.forEach(s => {
         statsMap[s.Zone] = s['Calculated GFA'];
       });
     }
-
-    // Identify unique zones on this specific floor layout
     const uniqueZonesOnFloor = zones ? [...new Set(zones.map(z => z.type))] : [];
 
     return (
@@ -274,7 +339,6 @@ function LayoutGeneratorPage() {
           {uniqueZonesOnFloor.map((shortCode, idx) => {
             const zoneConfig = INITIAL_ZONES.find(z => z.short === shortCode) || { title: shortCode, color: '#ccc' };
             const area = statsMap[shortCode] ? Math.round(statsMap[shortCode]) : 0;
-
             return (
               <div key={idx} className="zone-chip">
                 <div className="zone-color" style={{ backgroundColor: zoneConfig.color }}></div>
@@ -285,7 +349,6 @@ function LayoutGeneratorPage() {
               </div>
             );
           })}
-
           {uniqueZonesOnFloor.length === 0 && (
             <p style={{ color: '#999', padding: '0.5rem', fontStyle: 'italic', fontSize: '0.9rem' }}>
               No zones allocated to this floor.
@@ -298,20 +361,41 @@ function LayoutGeneratorPage() {
 
   return (
     <div className="layout-generator-page">
-      <ChipProgress activeChip={activeChip} onChipClick={(chip) => !isLoading && setActiveChip(chip)} chipLabels={{ input: 'Upload Data', results: 'Results' }} />
+      <div style={{ width: '60%' }}>
+        <ChipProgress activeChip={activeChip} onChipClick={(chip) => !isLoading && setActiveChip(chip)} chipLabels={{ input: 'Upload Data', results: 'Results' }} />
+      </div>
 
       {activeChip === 'input' && (
         <div className="layout-content-grid">
           <div className="layout-column-left">
-            <GuideCard steps={["Upload floorplan", "Trace boundary & fixed items", "Set GFA & Zones", "Generate"]} title="Process Guide" />
+            <GuideCard 
+              steps={[
+                "Upload floorplan",
+                "Input GFA",
+                "Input Zone Requirements",
+                "Generate Layout"
+              ]} 
+              title="How to Use Guide" 
+            />
+
             <InputCard icon="Building" title="Building Parameters">
               <div style={{ padding: '0 1rem 1rem 1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 600 }}>Total Gross Floor Area (sqm)</label>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 600 }}>Total Gross Floor Area (m²)</label>
                 <input type="number" className="text-input" value={totalGFA} onChange={(e) => setTotalGFA(e.target.value)} />
               </div>
             </InputCard>
+            
             <InputCard icon="AppWindow" title="Zone Requirements">
-              <p className="preferences-subtitle">Select zones. Click the badge to toggle Auto / m² / %.</p>
+              <div className="preferences-subtitle" style={{ fontSize: '0.9rem', color: 'rgba(0,0,0,0.7)', lineHeight: '1.5', marginBottom: '1.5rem' }}>
+                <p style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>Enable/Disable each zone by clicking on the card.</p>
+                <p style={{ marginBottom: '0.5rem' }}>Modify the approximate area by clicking through different modes:</p>
+                <ul style={{ paddingLeft: '1.2rem', margin: 0 }}>
+                  <li><strong>Auto:</strong> Will expand to fill the remaining space</li>
+                  <li><strong>%:</strong> Will try to fill that percent of total space (For collection areas)</li>
+                  <li><strong>m²:</strong> Will try to fill that floor space (For fixed-sized spaces like toilets, lifts/escalators etc.)</li>
+                </ul>
+              </div>
+              
               <div className="preferences-grid">
                 {zoneSettings.map((zone, index) => (
                   <div key={zone.short}>
@@ -332,6 +416,7 @@ function LayoutGeneratorPage() {
               </div>
             </InputCard>
           </div>
+          
           <div className="layout-column-right">
             <div className="floor-tabs-container">
               {floors.map(floor => (
@@ -339,8 +424,15 @@ function LayoutGeneratorPage() {
               ))}
               <button className={`floor-tab add-tab ${activeTab === 'add' ? 'active' : ''}`} onClick={() => setActiveTab('add')}><Icon name="Plus" size={16} /></button>
             </div>
+            
             {activeTab === 'add' ? (
-              <UploadCard icon="Map" title="Floor Plan Upload" subtitle="Upload floor plan image." onFileSelect={handleFileSelect} />
+              <UploadCard 
+                icon="Map" 
+                title="Floor Plan Upload" 
+                subtitle="Upload floor plan image."
+                uploadText="Upload Floorplan (.png, .img)" 
+                onFileSelect={handleFileSelect} 
+              />
             ) : (
               currentFloor && <FloorPlanTracer key={currentFloor.id} imageSrc={currentFloor.image} savedZone={currentFloor.tracerData} onSave={handleTraceSave} onCancel={handleTraceCancel} />
             )}
@@ -348,96 +440,179 @@ function LayoutGeneratorPage() {
         </div>
       )}
 
-      {activeChip === 'results' && resultsReady && apiResult && (
+      {activeChip === 'results' && (
         <div className="results-area">
-          <div className="results-grid-top">
-            {variations.map((variation, idx) => (
-              <LayoutSuggestionCard
-                key={idx}
-                title={idx === 0 ? "Recommended Layout" : `Variation ${idx + 1}`}
-                floorNames={floors.map(f => f.name)}
-                floorImages={floors.map(f => f.image)}
-                layouts={variation.layouts}
-                dimensions={floors[0]?.tracerData?.dimensions}
-                isSelected={selectedVariationIndex === idx}
-                onClick={() => setSelectedVariationIndex(idx)}
-              />
-            ))}
-          </div>
-
-          <div className="results-grid-bottom">
-            <div className="card" style={{ padding: '0', overflow: 'hidden', minHeight: '500px' }}>
-              <div style={{ padding: '1rem', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Icon name="Layers" size={18} />
-                  <h4 style={{ margin: 0 }}>
-                    {selectedVariationIndex === 0 ? "Recommended Layout" : `Variation ${selectedVariationIndex + 1}`}
-                  </h4>
-                  <span style={{ fontSize: '0.8rem', color: '#666', fontWeight: 'normal', marginLeft: '0.5rem' }}>
-                    (Fitness: {currentVariation?.fitness?.toFixed(2) || 'N/A'})
-                  </span>
-                </div>
-
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  {floors.map((f, idx) => (
-                    <button
-                      key={idx}
-                      className={`results-floor-tab ${resultActiveFloorIndex === idx ? 'active' : ''}`}
-                      onClick={() => setResultActiveFloorIndex(idx)}
-                    >
-                      {f.name}
-                    </button>
-                  ))}
-                </div>
+          {resultsReady && apiResult ? (
+            <>
+              <div className="results-grid-top">
+                {variations.map((variation, idx) => (
+                  <LayoutSuggestionCard
+                    key={idx}
+                    title={idx === 0 ? "Recommended Layout" : `Variation ${idx + 1}`}
+                    floorNames={floors.map(f => f.name)}
+                    floorImages={floors.map(f => f.image)}
+                    layouts={variation.layouts}
+                    dimensions={floors[0]?.tracerData?.dimensions}
+                    isSelected={selectedVariationIndex === idx}
+                    onClick={() => setSelectedVariationIndex(idx)}
+                    externalActiveFloorIndex={resultActiveFloorIndex}
+                  />
+                ))}
               </div>
 
-              <ResultVisualizer
-                imageSrc={floors[resultActiveFloorIndex]?.image}
-                zones={currentFloorResult ? currentFloorResult.zones : []}
-                dimensions={floors[resultActiveFloorIndex]?.tracerData?.dimensions}
-                areaStats={currentVariation?.area_stats} // <-- pass the area data here
-              />
-            </div>
+              <div className="results-grid-bottom">
+                <div className="card" style={{ padding: '0', overflow: 'hidden', minHeight: '500px' }}>
+                  <div style={{ padding: '1rem', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Icon name="Layers" size={18} />
+                      <h4 style={{ margin: 0 }}>
+                        {selectedVariationIndex === 0 ? "Recommended Layout" : `Variation ${selectedVariationIndex + 1}`}
+                      </h4>
+                      <span style={{ fontSize: '0.8rem', color: '#666', fontWeight: 'normal', marginLeft: '0.5rem' }}>
+                        (Fitness: {currentVariation?.fitness?.toFixed(2) || 'N/A'})
+                      </span>
+                    </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              <div className="card" style={{ padding: '1.5rem', flex: 1 }}>
-                <h5 style={{ fontWeight: 'bold', margin: '0 0 1rem 0' }}>Zone Distribution Stats</h5>
-                <ZoneGrid zones={currentFloorResult ? currentFloorResult.zones : []} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      <div className="layout-card-tabs" style={{backgroundColor: 'rgba(0, 0, 0, 0.05)', padding: '0.25rem', borderRadius: '0.5rem'}}>
+                        {floors.map((f, idx) => (
+                          <span
+                            key={idx}
+                            className={`card-floor-tab ${resultActiveFloorIndex === idx ? 'active' : ''}`}
+                            onClick={() => setResultActiveFloorIndex(idx)}
+                          >
+                            {f.name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <ResultVisualizer
+                    imageSrc={floors[resultActiveFloorIndex]?.image}
+                    zones={currentFloorResult ? currentFloorResult.zones : []}
+                    dimensions={floors[resultActiveFloorIndex]?.tracerData?.dimensions}
+                    areaStats={currentVariation?.area_stats} 
+                  />
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                  <div className="card" style={{ padding: '1.5rem', flex: 1 }}>
+                    <h5 style={{ fontWeight: 'bold', margin: '0 0 1rem 0' }}>Zone Distribution Stats</h5>
+                    <ZoneGrid zones={currentFloorResult ? currentFloorResult.zones : []} areaStats={currentVariation?.area_stats} />
+                  </div>
+
+                  <InputCard
+                    icon="Settings"
+                    title="Refine Layout"
+                    subtitle="Adjust preferences and regenerate."
+                    // UPDATED: Button Text
+                    headerActions={<Button variant="default" size="small" onClick={handleGenerate}>Update Layout</Button>}
+                  >
+                    <textarea
+                      className="preferences-textarea"
+                      placeholder="E.g., 'Make the children's area larger' or 'Move toilets near entrance'..."
+                      value={preferencesText}
+                      onChange={(e) => setPreferencesText(e.target.value)}
+                    ></textarea>
+                  </InputCard>
+                </div>
               </div>
-
-              <InputCard
-                icon="Settings"
-                title="Refine Layout"
-                subtitle="Adjust preferences and regenerate."
-                headerActions={<Button variant="default" size="small" onClick={handleGenerate}>Regenerate</Button>}
-              >
-                <textarea
-                  className="preferences-textarea"
-                  placeholder="E.g., 'Make the children's area larger' or 'Move toilets near entrance'..."
-                  value={preferencesText}
-                  onChange={(e) => setPreferencesText(e.target.value)}
-                ></textarea>
-              </InputCard>
+            </>
+          ) : (
+            <div className="no-results-message">
+              <h3>No Layout Generated</h3>
+              <p>Please go back to the "Upload Data" tab and generate a layout to see your results.</p>
             </div>
-          </div>
+          )}
         </div>
       )}
 
-      {isLoading && <div className="loader-overlay"><Loader text={statusMessage} /></div>}
+      {/* --- HIDDEN PRINT TEMPLATE FOR PDF GENERATION --- */}
+      {isGeneratingPdf && apiResult && (
+        <div id="print-template-container" style={{
+            position: 'fixed', left: '-9999px', top: 0,
+            width: '210mm', backgroundColor: 'white'
+        }}>
+            {/* Iterate over ALL variations */}
+            {apiResult.variations.map((variation, vIdx) => (
+                <React.Fragment key={vIdx}>
+                    {/* Iterate over ALL floors for each variation */}
+                    {floors.map((floor, fIdx) => {
+                        const layout = variation.layouts.find(l => l.floor_name === floor.name);
+                        const floorZones = layout ? layout.zones : [];
+                        const title = vIdx === 0 ? "Recommended Layout" : `Variation ${vIdx + 1}`;
+                        
+                        return (
+                            <div className="pdf-page-to-print" key={`${vIdx}-${fIdx}`} style={{
+                                width: '210mm', minHeight: '297mm', padding: '15mm', 
+                                display: 'flex', flexDirection: 'column', gap: '5mm', boxSizing: 'border-box'
+                            }}>
+                                <h2 style={{fontFamily: 'sans-serif', margin: 0, color: '#333'}}>Library Layout Report</h2>
+                                <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', borderBottom: '2px solid #333', paddingBottom: '2mm', marginBottom:'5mm'}}>
+                                    <h3 style={{margin:0, fontFamily: 'sans-serif', color: '#555'}}>{title}</h3>
+                                    <h3 style={{margin:0, fontFamily: 'sans-serif', color: '#555'}}>{floor.name}</h3>
+                                </div>
+
+                                {/* Floor Plan Image */}
+                                <div style={{width: '100%', height: '120mm', border: '1px solid #ddd', overflow:'hidden', borderRadius: '4px'}}>
+                                    <ResultVisualizer 
+                                        imageSrc={floor.image} 
+                                        zones={floorZones} 
+                                        dimensions={floor.tracerData?.dimensions}
+                                        areaStats={variation.area_stats}
+                                    />
+                                </div>
+
+                                {/* Zone Stats */}
+                                <div style={{marginTop: '10mm', flex: 1}}>
+                                    <h4 style={{margin: '0 0 5mm 0', fontFamily: 'sans-serif'}}>Zone Distribution Breakdown</h4>
+                                    <ZoneGrid zones={floorZones} areaStats={variation.area_stats} />
+                                </div>
+                                
+                                <div style={{marginTop:'auto', borderTop:'1px solid #eee', paddingTop:'5mm', textAlign:'center', fontSize:'0.8rem', color:'#999'}}>
+                                    Generated by LibraryPlan AI
+                                </div>
+                            </div>
+                        );
+                    })}
+                </React.Fragment>
+            ))}
+        </div>
+      )}
+
+      {activeChip === 'input' && isLoading && <Loader text={statusMessage} />}
 
       <div className="page-actions">
-        {activeChip === 'input' && !isLoading && (
+        {activeChip === 'input' ? (
+          isLoading ? (
+            <>
+              <div style={{ flex: 1 }}></div>
+              <Button variant="danger-outline" onClick={handleCancel}>Cancel</Button>
+              <Button variant="default" disabled>{statusMessage || "Optimizing Layout..."}</Button>
+            </>
+          ) : (
+            <>
+              <div style={{ flex: 1 }}></div>
+              <Button variant="default" size="default" onClick={handleGenerate} disabled={floors.length === 0}>Generate Layout</Button>
+            </>
+          )
+        ) : activeChip === 'results' ? (
           <>
             <div style={{ flex: 1 }}></div>
-            <Button variant="default" size="default" onClick={handleGenerate} disabled={floors.length === 0}>Generate Layout</Button>
+            {resultsReady ? (
+                <>
+                    {/* UPDATED: Button Text */}
+                    <Button variant="outline" size="default" onClick={handleRestart}>Restart Generation</Button>
+                    <Button variant="default" size="default" onClick={handleDownloadPDF} disabled={isGeneratingPdf}>
+                        {isGeneratingPdf ? "Generating PDF..." : "Download PDF"}
+                    </Button>
+                </>
+            ) : (
+                <Button variant="default" size="default" onClick={handleRestart}>Restart Generation</Button>
+            )}
           </>
-        )}
-        {activeChip === 'results' && (
-          <>
-            <div style={{ flex: 1 }}></div>
-            <Button variant="outline" size="default" onClick={handleRestart}>Start Over</Button>
-          </>
-        )}
+        ) : null}
       </div>
     </div>
   );
