@@ -105,3 +105,84 @@ input::placeholder {
     border: none;
     font-size: 1rem;
 }
+
+.link-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: inherit;
+    font-size: inherit;
+    color: rgba(var(--blue), 1);
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.link-btn:hover {
+    text-decoration: underline;
+}
+
+.link-btn.bold {
+    font-weight: bold;
+}
+
+/* /* ... existing styles ... */
+
+.link-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: inherit;
+    font-size: inherit;
+    color: rgba(var(--blue), 1);
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.link-btn:hover {
+    text-decoration: underline;
+}
+
+.link-btn.bold {
+    font-weight: bold;
+}
+
+.auth-form-input {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: start;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+/* --- Password Toggle Styles --- */
+
+.password-input-wrapper {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+}
+
+/* Add padding to the right so text doesn't overlap the icon */
+.auth-input.with-toggle {
+    padding-right: 2.5rem;
+}
+
+.password-toggle-icon {
+    position: absolute;
+    right: 0.75rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: rgba(52, 58, 64, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: color 0.2s;
+}
+
+.password-toggle-icon:hover {
+    color: rgba(52, 58, 64, 0.8);
+}

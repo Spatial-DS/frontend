@@ -102,6 +102,12 @@ function LayoutGeneratorPage() {
     };
   }, []);
 
+  // Helper to generate dynamic filename
+  const getGeneratedFilename = () => {
+    const dateStr = new Date().toISOString().split('T')[0];
+    return `Layout_Generation_${dateStr}.pdf`;
+  };
+
   // Handlers
   const handleZoneToggle = (index) => {
     const newZones = [...zoneSettings];
@@ -160,7 +166,10 @@ function LayoutGeneratorPage() {
 
   const handleGenerate = async () => {
     setIsLoading(true);
-    setStatusMessage("Validating inputs...");
+    
+    // Check if updating an existing result
+    const isUpdate = activeChip === 'results';
+    setStatusMessage(isUpdate ? "Updating Layout..." : "Validating inputs...");
 
     const activeZones = zoneSettings.filter(z => z.isSelected);
     if (activeZones.length === 0 || floors.length === 0) {
@@ -176,7 +185,8 @@ function LayoutGeneratorPage() {
     }
 
     try {
-      setStatusMessage("Uploading data...");
+      if (!isUpdate) setStatusMessage("Uploading data...");
+      
       const floorPlansPayload = floors.map(f => {
         const tData = f.tracerData;
         const boundary = tData.floorplan.map(p => [p.x, p.y]);
@@ -225,7 +235,7 @@ function LayoutGeneratorPage() {
       if (!response.ok) throw new Error("Failed to submit job");
       const { job_id } = await response.json();
 
-      setStatusMessage("Optimizing Layout...");
+      setStatusMessage(isUpdate ? "Updating Layout..." : "Optimizing Layout...");
       
       pollIntervalRef.current = setInterval(async () => {
         try {
@@ -237,6 +247,25 @@ function LayoutGeneratorPage() {
             setResultsReady(true);
             setIsLoading(false);
             setActiveChip('results');
+
+            // --- Log to History ---
+            try {
+              const fileName = getGeneratedFilename();
+              const newHistoryItem = {
+                id: Date.now(),
+                name: fileName,
+                type: 'Layout Generations',
+                date: new Date().toISOString().split('T')[0]
+              };
+              
+              const currentHistory = JSON.parse(localStorage.getItem('library_app_history') || '[]');
+              const updatedHistory = [newHistoryItem, ...currentHistory];
+              localStorage.setItem('library_app_history', JSON.stringify(updatedHistory));
+            } catch (histError) {
+              console.error("Failed to log history:", histError);
+            }
+            // ----------------------
+
           } else if (statusData.status === 'failed') {
             clearInterval(pollIntervalRef.current);
             throw new Error(statusData.error || "Failed");
@@ -304,7 +333,7 @@ function LayoutGeneratorPage() {
                 pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, imgHeight);
             }
             
-            pdf.save("Library_Layout_Report.pdf");
+            pdf.save(getGeneratedFilename());
         } catch (err) {
             console.error("PDF Generation failed", err);
             alert("Failed to generate PDF");
@@ -506,7 +535,6 @@ function LayoutGeneratorPage() {
                     icon="Settings"
                     title="Refine Layout"
                     subtitle="Adjust preferences and regenerate."
-                    // UPDATED: Button Text
                     headerActions={<Button variant="default" size="small" onClick={handleGenerate}>Update Layout</Button>}
                   >
                     <textarea
@@ -581,7 +609,9 @@ function LayoutGeneratorPage() {
         </div>
       )}
 
-      {activeChip === 'input' && isLoading && <Loader text={statusMessage} />}
+      {/* --- LOADER --- */}
+      {/* Updated: Now renders regardless of chip, as long as loading is true */}
+      {isLoading && <Loader text={statusMessage} />}
 
       <div className="page-actions">
         {activeChip === 'input' ? (

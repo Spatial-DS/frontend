@@ -34,14 +34,15 @@ import {
   Lock,
   HelpCircle,
   AlertCircle,
-  // --- NEW ADDITIONS ---
   Coffee,
   Footprints,
   Image,
   Briefcase,
   Package,
   UsersRound,
-  Archive
+  Archive,
+  Eye,
+  EyeClosed // Import EyeClosed here
 } from 'lucide-react';
 
 // Map string names to the actual components
@@ -80,7 +81,6 @@ const iconMap = {
   Lock,
   HelpCircle,
   AlertCircle,
-  // --- NEW MAPPINGS ---
   Coffee,
   Footprints,
   Image,
@@ -88,6 +88,8 @@ const iconMap = {
   Package,
   UsersRound,
   Archive,
+  Eye,
+  EyeClosed, // Add to map
   default: AlertCircle
 };
 
@@ -97,10 +99,11 @@ const iconMap = {
  * @param {string} props.name - The name of the lucide icon.
  * @param {number} props.size - The size of the icon.
  * @param {string} props.className - Additional CSS classes.
+ * @param {object} props.style - Inline styles.
  */
-function Icon({ name, size = 20, className = '' }) {
+function Icon({ name, size = 20, className = '', style={} }) {
   const LucideIcon = iconMap[name] || iconMap.default;
-  return <LucideIcon size={size} className={className} />;
+  return <LucideIcon size={size} className={className} style={style} />;
 }
 
 export default Icon;
