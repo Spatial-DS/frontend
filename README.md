@@ -1,18 +1,166 @@
-# React + Vite
+Based on the code files provided, I have drafted a comprehensive `README.md` file. It covers the project architecture, features, prerequisites, and step-by-step instructions to get both the Backend (FastAPI) and Frontend (React+Vite) running.
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+You can save this content as `README.md` in the root of your project folder (e.g., inside `spatial-ds/`).
 
-Currently, two official plugins are available:
+-----
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+# LibraryPlan: Spatial Data System
 
-## React Compiler
+**LibraryPlan** is a full-stack web application designed to assist library planners and architects. It combines data analytics for collection management with evolutionary algorithms for spatial layout optimization.
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+## 🚀 Features
 
-Note: This will impact Vite dev & build performances.
+### 1\. Shelf Calculator
 
-## Expanding the ESLint configuration
+  * **Data-Driven Planning:** Ingests circulation and collection data (Excel/CSV).
+  * **Smart Calculation:** Computes linear meterage requirements based on target growth rates ($\alpha$) and collection mix.
+  * **Automated Reporting:** Generates formatted Microsoft Word (`.docx`) reports detailing shelf runs and tier requirements.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### 2\. Layout Generator
+
+  * **Genetic Algorithm Optimization:** Uses the DEAP library to generate optimal floor plan layouts based on adjacency rules, flow constraints, and zone targets.
+  * **Multi-Floor Support:** Capable of optimizing layouts across multiple building levels.
+  * **Interactive Tracer:** Built-in tool to trace boundaries and fixed elements (entrances, lifts) directly on uploaded floor plan images.
+  * **Visual Analytics:** Provides zone distribution statistics and downloadable PDF reports of the generated layouts.
+
+## 🛠️ Tech Stack
+
+### Frontend
+
+  * **Framework:** React 19 (via Vite)
+  * **Routing:** React Router v7
+  * **Styling:** CSS Modules, Lucide React (Icons)
+  * **Utilities:** `xlsx` (Excel parsing), `jspdf` & `html2canvas` (PDF generation)
+
+### Backend
+
+  * **API:** Python FastAPI
+  * **Algorithm:** DEAP (Distributed Evolutionary Algorithms in Python), NumPy, SciPy
+  * **Geometry:** Shapely
+  * **Data Processing:** Pandas, OpenPyXL, Python-docx
+  * **Database:** SQLite (via SQLAlchemy)
+
+-----
+
+## 📋 Prerequisites
+
+Before running the project, ensure you have the following installed:
+
+  * **Node.js** (v18 or higher) & **npm**
+  * **Python** (v3.10 or higher)
+
+-----
+
+## ⚡ Quick Start Guide
+
+The project is split into two parts: the `frontend` (React) and the `backend` (Python). You need to run both terminals simultaneously.
+
+### 1\. Backend Setup (FastAPI)
+
+1.  Open a terminal and navigate to the backend directory:
+
+    ```bash
+    cd spatial-ds/frontend/frontend-cells/backend
+    ```
+
+2.  (Optional but Recommended) Create and activate a virtual environment:
+
+    ```bash
+    # Windows
+    python -m venv venv
+    venv\Scripts\activate
+
+    # Mac/Linux
+    python3 -m venv venv
+    source venv/bin/activate
+    ```
+
+3.  Install Python dependencies:
+
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+4.  Start the API server:
+
+    ```bash
+    python app.py
+    ```
+
+    *The server will start at `http://localhost:8000`.*
+
+### 2\. Frontend Setup (React)
+
+1.  Open a **new** terminal window and navigate to the frontend directory:
+
+    ```bash
+    cd spatial-ds/frontend/frontend-cells
+    ```
+
+2.  Install Node dependencies:
+
+    ```bash
+    npm install
+    ```
+
+3.  Start the development server:
+
+    ```bash
+    npm run dev
+    ```
+
+    *The application will likely run at `http://localhost:5173` (check terminal output).*
+
+-----
+
+## 🔐 Access & Usage
+
+1.  Open your browser and navigate to the frontend URL (e.g., `http://localhost:5173`).
+2.  **Login:** You will be greeted by a Sign-In page. Use the default administrative credentials found in the source code:
+      * **Username:** `tampines`
+      * **Password:** `tampineslibrary`
+        *(Note: You can create new users via the "Sign Up" link on the login page, which saves locally to your browser).*
+
+### Workflow 1: Shelf Calculator
+
+1.  Navigate to **Labels Set Up** to download the template or upload existing labels.
+2.  Go to **Input Files** to define Target/Current collection sizes.
+3.  Upload your **Raw Data** (from QlikSense/ILS) and **Collection Mix** files.
+4.  Click **Calculate** to receive a `.docx` report.
+
+### Workflow 2: Layout Generator
+
+1.  Go to **Input Files** and set the Total GFA (Gross Floor Area).
+2.  Select the desired zones (Adult Collection, Children's Area, etc.) and their size constraints (sqm or %).
+3.  Upload a floor plan image and use the **Tracer Tool** to define the boundary, entrances, and fixed obstacles.
+4.  Click **Generate Layout**. The AI will run through generations to find the optimal arrangement.
+5.  View results in the **Results** tab and download a PDF summary.
+
+-----
+
+## 📂 Project Structure
+
+```text
+spatial-ds/frontend/frontend-cells/
+├── src/                        # React Frontend Source
+│   ├── Components/             # UI Components (Cards, Buttons, Tracer, etc.)
+│   ├── Pages/                  # Main Page Views (LayoutGenerator, ShelfCalculator)
+│   └── App.jsx                 # Main Router
+├── backend/                    # Python Backend
+│   ├── floorplan/              # Core Logic
+│   │   ├── ga.py               # Genetic Algorithm Engine
+│   │   ├── geometry.py         # Shapely Geometry Processing
+│   │   ├── api.py              # Optimization Orchestrator
+│   │   └── rules.csv           # Adjacency Rules Matrix
+│   ├── generated_reports/      # Output folder for Word docs
+│   ├── app.py                  # FastAPI Entry Point
+│   └── requirements.txt        # Python Dependencies
+├── package.json                # Frontend Dependencies
+└── vite.config.js              # Vite Configuration
+```
+
+## 🐛 Troubleshooting
+
+  * **Backend Error:** If you see `ModuleNotFoundError`, ensure you have activated your virtual environment and installed `requirements.txt`.
+  * **Optimization Stalls:** The Layout Generator is computationally intensive. Check the terminal running the backend for progress logs (e.g., `Gen 10/100 | Fitness ...`).
+  * **Database Locks:** The app uses a local SQLite file (`floorplan.db`). If the app crashes, delete this file to reset the database state; it will be recreated automatically on the next run.
