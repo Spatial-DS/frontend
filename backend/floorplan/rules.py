@@ -1,108 +1,231 @@
-import re
+import json
+import os
+import typing
+
+import google.generativeai as genai
 import pandas as pd
+from pydantic import BaseModel, Field
+
 from floorplan.data_models import RoomData
 
+# --- UPDATED SCHEMAS ---
+
+
+class AdjacencyRule(BaseModel):
+    zone_source: str = Field(description="The first zone code")
+    zone_target: str = Field(description="The second zone code")
+    relation: typing.Literal["attract", "repel"]
+    strength: float
+
+
+class ShapeRule(BaseModel):
+    zone: str
+    shape_type: typing.Literal["compact", "rectangular", "organic"]
+    weight: float
+
+
+class CountRule(BaseModel):
+    zone: str
+    count: int
+    weight: float
+
+
+class RuleParsingResponse(BaseModel):
+    # --- TRICK: "remarks" is now FIRST ---
+    # This forces the LLM to write the explanation before it can write "success: false"
+    remarks: str = Field(
+        ...,  # The '...' explicitly marks this as REQUIRED
+        description="Chain of Thought: Explain your reasoning here. If rejecting, explain exactly why (e.g. 'Pool is not a valid zone').",
+    )
+    success: bool = Field(
+        ...,
+        description="Set to True if the request was successfully mapped to rules. Set to False if rejected.",
+    )
+    # Lists default to empty
+    adjacency_rules: list[AdjacencyRule] = Field(default_factory=list)
+    shape_rules: list[ShapeRule] = Field(default_factory=list)
+    count_rules: list[CountRule] = Field(default_factory=list)
+
+
+# --- ENGINE ---
+
+
 class RuleEngine:
+    def __init__(self):
+        api_key = os.environ.get("GOOGLE_API_KEY")
+        if not api_key:
+            raise ValueError("GOOGLE_API_KEY environment variable not found.")
+
+        genai.configure(api_key=api_key)
+        self.model = genai.GenerativeModel(model_name="gemini-2.5-flash-lite")
+
     def parse_text(
         self, text_prompt: str, room_data: RoomData
     ) -> tuple[pd.DataFrame, dict]:
-        
         modified_rules_df = room_data.rules_df.copy()
         dynamic_rules = {
-            "compactness": [], 
+            "compactness": [],
             "count_per_floor": [],
-            "rectangularity": [] # New Category
+            "rectangularity": [],
+            "metadata": {"success": True, "remarks": "No custom rules applied."},
         }
-        all_zones = room_data.room_df["short"].values
-        
-        # 1. Apply Defaults from 'shape' column in CSV
-        # This ensures rooms behave according to their static definition 
-        # unless overridden by text.
+
+        # 1. Prepare Zone Context
+        zone_info = []
+        valid_codes = []
+        name_col = "name" if "name" in room_data.room_df.columns else "short"
+
+        for _, row in room_data.room_df.iterrows():
+            code = row["short"]
+            name = row.get(name_col, code)
+            valid_codes.append(code)
+            zone_info.append(f"- {name} ('{code}')")
+
+        valid_zones_str = "\n".join(zone_info)
+
+        # ---------------------------------------------------------
+        # 2A. Apply Defaults from 'shape' column
+        # ---------------------------------------------------------
         if "shape" in room_data.room_df.columns:
             for _, row in room_data.room_df.iterrows():
                 zone = row["short"]
                 shape = str(row["shape"]).lower().strip()
-                
                 if shape in ["square", "rect", "rectangular"]:
-                    # Default: Moderate encouragement to be square
-                    dynamic_rules["rectangularity"].append({"zone": zone, "weight": 2.0})
+                    dynamic_rules["rectangularity"].append(
+                        {"zone": zone, "weight": 2.0}
+                    )
                 elif shape == "round":
-                    # Default: Standard clustering
                     dynamic_rules["compactness"].append({"zone": zone, "weight": 1.0})
                 elif shape == "organic":
-                    # Default: Allow sprawl (negative compactness or zero)
                     dynamic_rules["compactness"].append({"zone": zone, "weight": 0.0})
 
-        # 2. Parse Text Prompts (Overrides)
+        # ---------------------------------------------------------
+        # 2B. Apply Defaults from 'count_per_floor' column (NEW)
+        # ---------------------------------------------------------
+        if "count_per_floor" in room_data.room_df.columns:
+            for _, row in room_data.room_df.iterrows():
+                val = row["count_per_floor"]
+                # Check if value is valid (not NaN, not empty, > 0)
+                if pd.notna(val) and str(val).strip() != "":
+                    try:
+                        count_val = int(val)
+                        if count_val > 0:
+                            dynamic_rules["count_per_floor"].append(
+                                {
+                                    "zone": row["short"],
+                                    "target": count_val,
+                                    "weight": 5.0,  # High priority for CSV defaults
+                                }
+                            )
+                    except ValueError:
+                        pass  # Ignore non-integer values
+
+        # 3. Prompt Construction & LLM Call
+        if not text_prompt or not text_prompt.strip():
+            return modified_rules_df, dynamic_rules
+
+        prompt = f"""
+        You are a strict configuration parser for a Library Floorplan Engine.
         
-        num_pattern = r"(\d+\.?\d*)"
+        ### Valid Zones
+        {valid_zones_str}
 
-        # Adjacency
-        adj_pattern = re.compile(
-            r"make\s+(\w+)\s+(repel|attract)\s+(\w+)\s+with\s+strength\s+" + num_pattern,
-            re.IGNORECASE,
-        )
-        for match in adj_pattern.finditer(text_prompt):
-            zone1, rel, zone2, val = match.groups()
-            strength = float(val) * (-1 if rel.lower() == "attract" else 1)
-            if zone1 in modified_rules_df.index and zone2 in modified_rules_df.columns:
-                modified_rules_df.loc[zone1, zone2] = strength
-                modified_rules_df.loc[zone2, zone1] = strength
-                print(f"Rule: '{zone1}' <-> '{zone2}' strength {strength}")
+        ### Instructions
+        1. Analyze the "User Request".
+        2. **First**, fill the `remarks` field explaining your reasoning.
+        3. **Second**, set `success`.
+        4. **Third**, map valid rules.
 
-        # Compactness (Round/Clustered)
-        compact_pattern = re.compile(
-            r"ensure\s+(\w+)\s+is\s+compact\s+with\s+weight\s+" + num_pattern,
-            re.IGNORECASE,
-        )
-        for match in compact_pattern.finditer(text_prompt):
-            zone, weight_str = match.groups()
-            if zone in all_zones:
-                # Remove existing default if present
-                dynamic_rules["compactness"] = [r for r in dynamic_rules["compactness"] if r["zone"] != zone]
-                dynamic_rules["compactness"].append({"zone": zone, "weight": float(weight_str)})
-                print(f"Rule: '{zone}' compactness {weight_str}")
+        ### Rules
+        - **Adjacency**: Attract/Repel. Strength 0.0-1.0.
+        - **Shape**: Rectangular/Compact/Organic. Weight 1.0-5.0.
+        - **Counts**: Target number per floor. Weight 5.0.
 
-        # Rectangularity (Square/Rectangular) - NEW
-        rect_pattern = re.compile(
-            r"ensure\s+(\w+)\s+is\s+(?:square|rectangular)\s+with\s+weight\s+" + num_pattern,
-            re.IGNORECASE,
-        )
-        for match in rect_pattern.finditer(text_prompt):
-            zone, weight_str = match.groups()
-            if zone in all_zones:
-                # Remove existing rectangularity rule if present
-                dynamic_rules["rectangularity"] = [r for r in dynamic_rules["rectangularity"] if r["zone"] != zone]
-                dynamic_rules["rectangularity"].append({"zone": zone, "weight": float(weight_str)})
-                
-                # Also ensure standard compactness is low/off so it doesn't fight the square shape
-                # (optional, but squares usually shouldn't be forced to be circles)
-                dynamic_rules["compactness"] = [r for r in dynamic_rules["compactness"] if r["zone"] != zone]
-                
-                print(f"Rule: '{zone}' rectangularity {weight_str}")
+        ### User Request
+        "{text_prompt}"
+        """
 
-        # Distribution (Sprawl/Organic)
-        dist_pattern = re.compile(
-            r"(?:distribute|ensure)\s+(\w+)\s+(?:with\s+weight|is\s+organic)\s+" + num_pattern, re.IGNORECASE
-        )
-        for match in dist_pattern.finditer(text_prompt):
-            zone, weight_str = match.groups()
-            if zone in all_zones:
-                dynamic_rules["compactness"] = [r for r in dynamic_rules["compactness"] if r["zone"] != zone]
-                # Negative compactness encourages perimeter growth
-                dynamic_rules["compactness"].append({"zone": zone, "weight": -float(weight_str)})
-                print(f"Rule: '{zone}' distribution {-float(weight_str)}")
+        try:
+            response = self.model.generate_content(
+                prompt,
+                generation_config=genai.GenerationConfig(
+                    response_mime_type="application/json",
+                    response_schema=RuleParsingResponse,
+                ),
+            )
 
-        # Count Per Floor
-        count_pattern = re.compile(
-            r"ensure\s+(\d+)\s+(\w+)\s+per\s+floor\s+with\s+weight\s+" + num_pattern,
-            re.IGNORECASE,
-        )
-        for match in count_pattern.finditer(text_prompt):
-            count, zone, weight_str = match.groups()
-            if zone in all_zones:
-                dynamic_rules["count_per_floor"].append(
-                    {"zone": zone, "target": int(count), "weight": float(weight_str)}
-                )
+            data_dict = json.loads(response.text)
+            print(f"\n[LLM RESPONSE]: {json.dumps(data_dict, indent=2)}\n")
+
+            llm_success = data_dict.get("success", True)
+            llm_remarks = data_dict.get(
+                "remarks", "Input rejected by AI (No reason provided)."
+            )
+
+            dynamic_rules["metadata"] = {"success": llm_success, "remarks": llm_remarks}
+
+            if not llm_success:
+                return modified_rules_df, dynamic_rules
+
+            # 4. Apply Logic (Overrides)
+
+            # Adjacency
+            for rule in data_dict.get("adjacency_rules", []):
+                z1, z2 = rule["zone_source"], rule["zone_target"]
+                if z1 in modified_rules_df.index and z2 in modified_rules_df.columns:
+                    raw_strength = rule["strength"]
+                    direction = -1.0 if rule["relation"] == "attract" else 1.0
+                    val = raw_strength * direction
+                    modified_rules_df.loc[z1, z2] = val
+                    modified_rules_df.loc[z2, z1] = val
+
+            # Shape (Clear defaults if overridden)
+            for rule in data_dict.get("shape_rules", []):
+                zone = rule["zone"]
+                if zone in valid_codes:
+                    dynamic_rules["compactness"] = [
+                        r for r in dynamic_rules["compactness"] if r["zone"] != zone
+                    ]
+                    dynamic_rules["rectangularity"] = [
+                        r for r in dynamic_rules["rectangularity"] if r["zone"] != zone
+                    ]
+
+                    if rule["shape_type"] == "rectangular":
+                        dynamic_rules["rectangularity"].append(
+                            {"zone": zone, "weight": rule["weight"]}
+                        )
+                    elif rule["shape_type"] == "compact":
+                        dynamic_rules["compactness"].append(
+                            {"zone": zone, "weight": rule["weight"]}
+                        )
+                    elif rule["shape_type"] == "organic":
+                        dynamic_rules["compactness"].append(
+                            {"zone": zone, "weight": -rule["weight"]}
+                        )
+
+            # Counts (Clear defaults if overridden)
+            for rule in data_dict.get("count_rules", []):
+                zone = rule["zone"]
+                if zone in valid_codes:
+                    # REMOVE existing default from CSV to allow LLM override
+                    dynamic_rules["count_per_floor"] = [
+                        r for r in dynamic_rules["count_per_floor"] if r["zone"] != zone
+                    ]
+
+                    dynamic_rules["count_per_floor"].append(
+                        {
+                            "zone": zone,
+                            "target": rule["count"],
+                            "weight": rule["weight"],
+                        }
+                    )
+
+        except Exception as e:
+            print(f"LLM Error: {e}")
+            dynamic_rules["metadata"] = {
+                "success": False,
+                "remarks": f"System Error: {str(e)}",
+            }
+            return modified_rules_df, dynamic_rules
 
         return modified_rules_df, dynamic_rules

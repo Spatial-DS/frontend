@@ -2,7 +2,7 @@
 import datetime
 import uuid
 
-from sqlalchemy import JSON, Column, DateTime, String, Text, create_engine
+from sqlalchemy import JSON, Column, DateTime, String, Float, Text, create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 # 1. Setup SQLite Engine
@@ -24,6 +24,8 @@ class Job(Base):
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     # Statuses: "queued", "processing", "completed", "failed"
     status = Column(String, index=True, default="queued")
+
+    progress = Column(Float, default=0.0) 
 
     created_at = Column(DateTime, default=datetime.datetime.now())
     updated_at = Column(

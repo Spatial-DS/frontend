@@ -1,17 +1,17 @@
-short,full,color,default_val,default_unit,shape
-ent,Entrance,#3366cc,5,percent,round
-lob,Lobby/Transition,#cc9933,,,organic
-bdr,Bookdrop,#ff8800,10,sqm,round
-loc,Reservation Lockers,#8844cc,3,sqm,round
-met,Meeting Rooms,#008877,,,square
-sty,Study Area,#66aadd,,,square
-adl,Adult Collection,#2e7d32,35,percent,organic
-exh,Exhibitions,#cc2288,5,percent,round
-prg,Programming Space,#ddaa00,5,percent,square
-chd,Children's Collection,#ffdd33,10,percent,round
-com,Community Owned Space,#8d6e63,5,percent,round
-yth,Youth Collection,#00bcd4,5,percent,round
-stf,Staff Areas (e.g. Back-of-House),#555555,10,percent,square
-toi,Toilets,#bbbbbb,15,sqm,square
-caf,Cafe,#cc3333,5,percent,square
-esc,Stairs/Escalators/Lifts,#888888,10,sqm,square
+short,full,color,default_val,default_unit,shape,count_per_floor
+ent,Entrance,#3366cc,5,percent,round,
+lob,Lobby/Transition,#cc9933,,,organic,
+bdr,Bookdrop,#ff8800,10,sqm,round,
+loc,Reservation Lockers,#8844cc,3,sqm,round,
+met,Meeting Rooms,#008877,,,square,
+sty,Study Area,#66aadd,,,square,
+adl,Adult Collection,#2e7d32,35,percent,organic,
+exh,Exhibitions,#cc2288,5,percent,round,
+prg,Programming Space,#ddaa00,5,percent,square,
+chd,Children's Collection,#ffdd33,10,percent,round,
+com,Community Owned Space,#8d6e63,5,percent,round,
+yth,Youth Collection,#00bcd4,5,percent,round,
+stf,Staff Areas (e.g. Back-of-House),#555555,10,percent,square,1
+toi,Toilets,#bbbbbb,15,sqm,square,1
+caf,Cafe,#cc3333,5,percent,square,
+esc,Stairs/Escalators/Lifts,#888888,10,sqm,square,

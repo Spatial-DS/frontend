@@ -4,9 +4,22 @@
   color: rgba(var(--black), 1);
 }
 
+.loader-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
 .loader-text {
   font-size: 1rem;
-  margin-bottom: 0.5rem;
+  margin: 0; /* Removed bottom margin since parent handles flex spacing */
+}
+
+.loader-percentage {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(var(--blue), 1);
 }
 
 .loader-bar {
@@ -17,12 +30,23 @@
   overflow: hidden;
 }
 
+/* Base styles for the progress fill */
 .loader-progress {
-  width: 100%;
   height: 100%;
   background-color: rgba(var(--blue), 1);
   border-radius: 0.25rem;
+}
+
+/* Mode 1: Indeterminate (The old sliding animation) */
+.loader-progress.indeterminate {
+  width: 100%;
   animation: loading-animation 2s linear infinite;
+}
+
+/* Mode 2: Determinate (Actual progress) */
+.loader-progress.determinate {
+  /* No animation, just smooth width transition */
+  transition: width 0.3s ease-out;
 }
 
 @keyframes loading-animation {

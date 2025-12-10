@@ -239,6 +239,7 @@ def get_job_status(job_id: str, db: Session = Depends(get_db)):
     response = {
         "job_id": job.id,
         "status": job.status,
+        "progress": job.progress,
         "created_at": job.created_at,
         "result": None,
         "error": None,
