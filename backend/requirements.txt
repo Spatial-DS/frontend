@@ -11,10 +11,7 @@ shapely
 uvicorn
 fastapi
 python-multipart
-<<<<<<< Updated upstream
 passlib
 bcrypt
-=======
 google-generativeai
 pydantic
->>>>>>> Stashed changes
