@@ -40,7 +40,18 @@ class Job(Base):
     error_message = Column(Text, nullable=True)
 
 
-# 3. Dependency for FastAPI Routes
+# 3. Define Job Model
+class GeneratedLayout(Base):
+    __tablename__ = "generated_layouts"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    filename = Column(String, nullable=False)
+    filepath = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.now())
+    username = Column(String, nullable=False)
+
+
+# 4. Dependency for FastAPI Routes
 def get_db():
     db = SessionLocal()
     try:
@@ -50,4 +61,5 @@ def get_db():
 
 
 # Create tables immediately (simplifies setup for this standalone example)
-Base.metadata.create_all(bind=engine)
+# Refactored and placed to app.py
+# Base.metadata.create_all(bind=engine)

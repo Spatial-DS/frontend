@@ -11,3 +11,5 @@ shapely
 uvicorn
 fastapi
 python-multipart
+passlib
+bcrypt
