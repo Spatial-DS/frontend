@@ -60,8 +60,3 @@ def get_db():
         yield db
     finally:
         db.close()
-
-
-# Create tables immediately (simplifies setup for this standalone example)
-# Refactored and placed to app.py
-# Base.metadata.create_all(bind=engine)

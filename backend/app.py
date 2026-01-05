@@ -1,4 +1,3 @@
-# ./app.py
 import matplotlib
 # 1. Force non-interactive backend immediately
 matplotlib.use("Agg")
@@ -44,10 +43,6 @@ os.makedirs(GENERATED_LAYOUT_FOLDER, exist_ok=True)
 
 # --- LIFECYCLE ---
 @asynccontextmanager
-# async def lifespan(app: FastAPI):
-#     # Create DB tables if they don't exist
-#     Base.metadata.create_all(bind=engine)
-#     yield
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
     # Create demo user if not exists -> Loads once

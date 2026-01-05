@@ -301,9 +301,6 @@ class FitnessEvaluator:
         )
 
         self.last_node_assignment = node_assignment
-
-        # To-Do: Delete print statements
-        # print("rectangularity_rules:", type(self.rectangularity_rules), self.rectangularity_rules.shape, self.rectangularity_rules.dtype)
         
         rules = np.asarray(self.rectangularity_rules)
 

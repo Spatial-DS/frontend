@@ -67,17 +67,6 @@ class RuleEngine:
         }
 
         # 1. Prepare Zone Context
-        # zone_info = []
-        # valid_codes = []
-        # name_col = "name" if "name" in room_data.room_df.columns else "short"
-
-        # for _, row in room_data.room_df.iterrows():
-        #     code = row["short"]
-        #     name = row.get(name_col, code)
-        #     valid_codes.append(code)
-        #     zone_info.append(f"- {name} ('{code}')")
-
-        # valid_zones_str = "\n".join(zone_info)
         valid_zones_str = """
         ent (Entrance)
         lob (Lobby / Transition)

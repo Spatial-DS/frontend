@@ -228,18 +228,6 @@ function ShelfCalculatorPage() {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         setDownloadUrl(url); 
-        
-        // const newHistoryItem = {
-        //   id: Date.now(),
-        //   name: serverFileName,
-        //   type: 'Shelf Run Calculations',
-        //   date: new Date().toISOString().split('T')[0]
-        // };
-
-        // const currentHistory = JSON.parse(localStorage.getItem('library_app_history') || '[]');
-        // const updatedHistory = [newHistoryItem, ...currentHistory];
-        // localStorage.setItem('library_app_history', JSON.stringify(updatedHistory));
-
         setResultsReady(true);
         setActiveChip('results');
 

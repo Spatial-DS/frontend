@@ -25,18 +25,6 @@ const SignInPage = () => {
     setError(''); // Clear error on typing
   };
 
-  // --- HELPER: USER MANAGEMENT ---
-  // const getUsers = () => {
-  //   const stored = localStorage.getItem('app_users');
-  //   return stored ? JSON.parse(stored) : {};
-  // };
-
-  // const saveUser = (username, password) => {
-  //   const users = getUsers();
-  //   users[username] = password;
-  //   localStorage.setItem('app_users', JSON.stringify(users));
-  // };
-
   const handleAuthAction = async (e) => {
     e.preventDefault();
     setError('');
@@ -63,19 +51,6 @@ const SignInPage = () => {
           });
 
           const data = await response.json();
-
-      // Check hardcoded dummy or stored user
-      // const isValidDummy = username === 'tampines' && password === 'tampineslibrary';
-      // const storedPassword = users[username];
-
-      // if (isValidDummy || (storedPassword && storedPassword === password)) {
-      //   // Set active session
-      //   localStorage.setItem('currentUser', username);
-      //   // Initialize history/settings for this user if usually needed (optional)
-      //   navigate('/shelf-calculator'); 
-      // } else {
-      //   setError("Invalid username or password.");
-      // }
       
         if (data.result === "1") {
               // Success: store token or username and password
@@ -98,21 +73,6 @@ const SignInPage = () => {
         setError("Passwords do not match.");
         return;
       }
-
-      // const users = getUsers();
-      // if (users[username] || username === 'tampines') {
-      //   setError("Username already exists.");
-      //   return;
-      // }
-
-      // saveUser(username, password);
-      // // Auto-login or ask to sign in? Let's ask to sign in for clarity.
-      // setSuccessMsg("Account created! Please sign in.");
-      // setTimeout(() => {
-      //   setFormData({ username: '', password: '', confirmPassword: '' });
-      //   setView('signin');
-      //   setSuccessMsg('');
-      // }, 1500);
 
       // Add user to database
       try {
@@ -155,27 +115,6 @@ const SignInPage = () => {
         return;
       }
 
-      // Checks and other verification are moved to backend
-
-      // const users = getUsers();
-      // Can't reset the dummy account this way in this simple demo logic, only stored ones
-      // if (username === 'tampines') {
-      //    setError("Cannot reset administrative account.");
-      //    return;
-      // }
-
-      // if (!users[username]) {
-      //   setError("Username not found.");
-      //   return;
-      // }
-
-      // saveUser(username, password); // Overwrite password
-      // setSuccessMsg("Password reset successful. Please sign in.");
-      // setTimeout(() => {
-      //   setFormData({ username: '', password: '', confirmPassword: '' });
-      //   setView('signin');
-      //   setSuccessMsg('');
-      // }, 1500);
 
       // Overwrite password
       try {

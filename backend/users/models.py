@@ -1,6 +1,6 @@
 
 from sqlalchemy import Column, String, DateTime
-from floorplan.database import Base, engine, SessionLocal
+from floorplan.database import Base
 import datetime
 import uuid
 

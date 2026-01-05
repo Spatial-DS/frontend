@@ -207,6 +207,7 @@ function LayoutGeneratorPage() {
   const handleGenerate = async () => {
     setIsLoading(true);
     setProgressValue(0);
+    setIsPdfSaved(false);
 
     // Check if updating an existing result
     const isUpdate = activeChip === 'results';
@@ -305,24 +306,6 @@ function LayoutGeneratorPage() {
               });
             }
 
-            // --- Log to History ---
-            // try {
-            //   const fileName = getGeneratedFilename();
-            //   const newHistoryItem = {
-            //     id: Date.now(),
-            //     name: fileName,
-            //     type: 'Layout Generations',
-            //     date: new Date().toISOString().split('T')[0]
-            //   };
-              
-            //   const currentHistory = JSON.parse(localStorage.getItem('library_app_history') || '[]');
-            //   const updatedHistory = [newHistoryItem, ...currentHistory];
-            //   localStorage.setItem('library_app_history', JSON.stringify(updatedHistory));
-            // } catch (histError) {
-            //   console.error("Failed to log history:", histError);
-            // }
-            // ----------------------
-
           } else if (statusData.status === 'failed') {
             clearInterval(pollIntervalRef.current);
             throw new Error(statusData.error || "Failed");
@@ -398,7 +381,6 @@ function LayoutGeneratorPage() {
                 pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, imgHeight);
             }
 
-            setIsPdfSaved(true);
             pdf.save(getGeneratedFilename());
 
         } catch (err) {
@@ -450,10 +432,21 @@ function LayoutGeneratorPage() {
       });
 
       setIsPdfSaved(true);
-      console.log("PDF uploaded successfully!");
+      // console.log("PDF uploaded successfully!");
+      setModalState({
+                show: true,
+                type: 'success',
+                message: "PDF uploaded successfully!"
+              });
+
     } catch (err) {
-      console.error("PDF Generation failed", err);
-      alert("Failed to generate PDF");
+      // console.error("PDF Generation failed", err);
+      // alert("Failed to generate PDF");
+      setModalState({
+                show: true,
+                type: 'error',
+                message: "PDF Generation failed."
+              });
     } finally {
       setIsGeneratingPdf(false);
     }
@@ -470,7 +463,6 @@ useEffect(() => {
       );
       if (!confirmLeave) {
         e.preventDefault();
-        // e.returnValue = '';
       }
     }
   };
@@ -483,7 +475,6 @@ useEffect(() => {
     links.forEach(link => link.removeEventListener('click', handleClick));
   };
 }, [isPdfSaved, resultsReady]);
-
 
 
   const currentFloor = floors.find(f => f.id === activeTab);
@@ -795,7 +786,7 @@ useEffect(() => {
                         {isGeneratingPdf ? "Generating PDF..." : "Download PDF"}
                     </Button>
                     <Button variant="default" size="default" onClick={handleUploadPDF} disabled={isPdfSaved}>
-                      {!isPdfSaved ? "Save PDF to Database" : "Saved to Database ✓"} 
+                      {!isPdfSaved ? "Save PDF to Database" : "Saved to Database"} 
                     </Button> 
                 </>
             ) : (

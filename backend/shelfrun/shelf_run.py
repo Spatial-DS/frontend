@@ -1,7 +1,5 @@
 import pandas as pd
 import numpy as np
-import sys
-import argparse
 from docx import Document
 from docx.shared import Inches, Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH

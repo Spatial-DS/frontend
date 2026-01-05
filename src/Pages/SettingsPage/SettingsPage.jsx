@@ -27,13 +27,7 @@ function SettingsPage() {
 
   // --- ACCOUNT STATE ---
   const [currentPassword, setCurrentPassword] = useState(() => {
-    // const user = localStorage.getItem('currentUser');
     return localStorage.getItem('currentPassword');
-    // if (!user) return '';
-    // const users = JSON.parse(localStorage.getItem('app_users') || '{}');
-    // if (users[user]) return users[user];
-    // if (user === 'tampines') return 'tampineslibrary';
-    // return '';
   });
 
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -46,50 +40,13 @@ function SettingsPage() {
   const [error, setError] = useState('');
 
   // --- HISTORY STATE ---
-//   const [historyData, setHistoryData] = useState(() => {
-//       try {
-//           return JSON.parse(localStorage.getItem('library_app_history') || '[]');
-//       } catch (e) { return []; }
-//   });
-
-//   useEffect(() => {
-//       if (activeChip === 'results') {
-//           const stored = localStorage.getItem('library_app_history');
-//           if (stored) setHistoryData(JSON.parse(stored));
-//       }
-//   }, [activeChip]);
-
   const [historyData, setHistoryData] = useState([]);
-
-//   useEffect(() => {
-//     if (activeChip === 'results') {
-//       fetch(`${API_BASE_URL}/shelf-run-history`)
-//         .then(response => response.json())
-//         .then(data => setHistoryData(data))
-//         .catch(err => console.error("Failed to load history:", err));
-//     }
-//   }, [activeChip]);
 
   
   useEffect(() => {
     if (activeChip === 'results') {
       const currentUser = localStorage.getItem('currentUser');
-    //   Promise.all([
-    //     fetch(`${API_BASE_URL}/shelf-run-history`).then(res => res.json()),
-    //     fetch(`${API_BASE_URL}/generated-layout-history`).then(res => res.json())
-    //   ])
-    //     .then(([shelfHistory, layoutHistory]) => {
-    //       // Merge both arrays
-    //       const combined = [...shelfHistory, ...layoutHistory];
-
-    //       // Sort by created_at descending
-    //       combined.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-    //       setHistoryData(combined);
-    //     })
-    //     .catch(err => console.error("Failed to load history:", err));
-    // }
-    
+   
         const formData = new FormData();
         formData.append("username", currentUser);
         Promise.all([
@@ -129,13 +86,6 @@ function SettingsPage() {
               alert("New passwords do not match.");
               return;
           }
-          
-        //   const user = localStorage.getItem('currentUser');
-        //   if (user) {
-        //       const users = JSON.parse(localStorage.getItem('app_users') || '{}');
-        //       users[user] = newPassword;
-        //       localStorage.setItem('app_users', JSON.stringify(users));
-        //   }
 
           // Update password
           const username = localStorage.getItem('currentUser');
@@ -176,21 +126,6 @@ function SettingsPage() {
             setSaveMessage("Settings saved.");
             setTimeout(() => setSaveMessage(''), 3000);
         }
-
-    //       console.log("Password updated");
-    //       setCurrentPassword(newPassword); 
-          
-    //       setNewPassword('');
-    //       setConfirmPassword('');
-    //       setPasswordStrength(0);
-    //       setIsChangingPassword(false);
-          
-    //       setSaveMessage("Password updated successfully.");
-    //       setTimeout(() => setSaveMessage(''), 3000); 
-    //   } else {
-    //       setSaveMessage("Settings saved.");
-    //       setTimeout(() => setSaveMessage(''), 3000);
-    //   }
   };
 
   const handleHistoryDownload = async (fileName) => {
@@ -211,11 +146,6 @@ function SettingsPage() {
           alert(`Could not download ${fileName}.`);
       }
   };
-
-//   const filteredHistory = historyFilter === 'All' 
-//     ? historyData 
-//     : historyData.filter(item => item.type === historyFilter);
-
 
   const filteredHistory = historyFilter === 'All'
     ? historyData
@@ -277,23 +207,7 @@ function SettingsPage() {
                         Layout Generations
                     </button>
                 </div>
-
-                {/* <div className="history-list">
-                    {filteredHistory.length > 0 ? (
-                        filteredHistory.map((item) => (
-                            <div key={item.id} className="history-item">
-                                <span className="history-item-name">{item.name}</span>
-                                <span className="history-item-badge">{item.type}</span>
-                                <div className="history-actions">
-                                    <button className="icon-btn" onClick={() => handleHistoryDownload(item.name)}><Icon name="ArrowDownToDot" size={20} /></button>
-                                </div>
-                            </div>
-                        ))
-                    ) : (
-                        <p style={{textAlign: 'center', color: '#666', padding: '2rem'}}>No history found.</p>
-                    )}
-                </div> */}
-                
+              
                 <div className="history-list">
                     {filteredHistory.length > 0 ? (
                         filteredHistory.map((item) => (
