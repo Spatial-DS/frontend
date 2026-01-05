@@ -1,8 +1,5 @@
 import React, { useState, useRef, useEffect} from 'react';
 
-// import { useNavigate } from 'react-router-dom';
-// import { useEffect } from 'react';
-
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import './LayoutGeneratorPage.css';
@@ -680,7 +677,14 @@ useEffect(() => {
                   <InputCard
                     icon="Settings"
                     title="Refine Layout"
-                    subtitle="Adjust preferences and regenerate."
+                    subtitle={
+                        <>
+                            Adjust preferences based on:<br/>
+                            1. Adjacency <i>(Make X near Y/ Keep X away from Y)</i><br/>
+                            2. Rectangularity <i>(Make X compact / dense / less fragmented)</i><br/>
+                            3. Shape <i>(Make X circular/rectangular)</i><br/>
+                        </>
+                    }
                     headerActions={<Button variant="default" size="small" onClick={handleGenerate}>Update Layout</Button>}
                   >
                     <textarea

@@ -9,8 +9,6 @@ from pydantic import BaseModel, Field
 from floorplan.data_models import RoomData
 
 # --- UPDATED SCHEMAS ---
-
-
 class AdjacencyRule(BaseModel):
     zone_source: str = Field(description="The first zone code")
     zone_target: str = Field(description="The second zone code")
@@ -48,8 +46,6 @@ class RuleParsingResponse(BaseModel):
 
 
 # --- ENGINE ---
-
-
 class RuleEngine:
     def __init__(self):
         api_key = os.environ.get("GOOGLE_API_KEY")
@@ -71,17 +67,34 @@ class RuleEngine:
         }
 
         # 1. Prepare Zone Context
-        zone_info = []
-        valid_codes = []
-        name_col = "name" if "name" in room_data.room_df.columns else "short"
+        # zone_info = []
+        # valid_codes = []
+        # name_col = "name" if "name" in room_data.room_df.columns else "short"
 
-        for _, row in room_data.room_df.iterrows():
-            code = row["short"]
-            name = row.get(name_col, code)
-            valid_codes.append(code)
-            zone_info.append(f"- {name} ('{code}')")
+        # for _, row in room_data.room_df.iterrows():
+        #     code = row["short"]
+        #     name = row.get(name_col, code)
+        #     valid_codes.append(code)
+        #     zone_info.append(f"- {name} ('{code}')")
 
-        valid_zones_str = "\n".join(zone_info)
+        # valid_zones_str = "\n".join(zone_info)
+        valid_zones_str = """
+        ent (Entrance)
+        lob (Lobby / Transition)
+        bdr (Bookdrop)
+        loc (Reservation Lockers)
+        met (Meeting Rooms)
+        sty (Study Area)
+        adl (Adult Collection)
+        exh (Exhibitions)
+        prg (Programming Space)
+        chd (Children's Collection)
+        com (Community Owned Space)
+        yth (Youth Collection)
+        stf (Staff Areas)
+        toi (Toilets)
+        caf (Cafe)
+        esc (Stairs / Lifts / Escalators)"""
 
         # ---------------------------------------------------------
         # 2A. Apply Defaults from 'shape' column
@@ -127,7 +140,7 @@ class RuleEngine:
         prompt = f"""
         You are a strict configuration parser for a Library Floorplan Engine.
         
-        ### Valid Zones
+        ### Canonical names map
         {valid_zones_str}
 
         ### Instructions
@@ -137,9 +150,12 @@ class RuleEngine:
         4. **Third**, map valid rules.
 
         ### Rules
-        - **Adjacency**: Attract/Repel. Strength 0.0-1.0.
-        - **Shape**: Rectangular/Compact/Organic. Weight 1.0-5.0.
-        - **Counts**: Target number per floor. Weight 5.0.
+        - adjacency_rules: relation ∈ [must_be_adjacent, prefer_adjacent, avoid_adjacent], weight ∈ [0.25, 3.0]
+        - shape_rules: shape ∈ [rectangular, l_shape, corridor_like, compact], weight ∈ [0.25, 3.0]
+        - rectangularity_rules: favors compact filled bounding boxes, weight ∈ [0.25, 3.0]
+
+
+        If a user says “strongly” or “strictly”, bump weight by +0.5.
 
         ### User Request
         "{text_prompt}"

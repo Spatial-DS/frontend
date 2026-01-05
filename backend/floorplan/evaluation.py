@@ -302,20 +302,27 @@ class FitnessEvaluator:
 
         self.last_node_assignment = node_assignment
 
-        print("rectangularity_rules:", type(self.rectangularity_rules), self.rectangularity_rules.shape, self.rectangularity_rules.dtype)
+        # To-Do: Delete print statements
+        # print("rectangularity_rules:", type(self.rectangularity_rules), self.rectangularity_rules.shape, self.rectangularity_rules.dtype)
+        
+        rules = np.asarray(self.rectangularity_rules)
 
-        penalty = _calculate_penalties_numba(
-            node_assignment=node_assignment,
-            edges_u=self.graph.adjacency_edges_np[0],
-            edges_v=self.graph.adjacency_edges_np[1],
-            grid_coords=self.graph.grid_positions, 
-            rules_matrix=self.rules_matrix,
-            target_counts=self.target_counts,
-            compactness_rules=self.compactness_rules,
-            rectangularity_rules=self.rectangularity_rules, 
-            per_floor_rules=self.per_floor_rules,
-            floor_node_ranges=self.graph.floor_node_ranges,
-            w_area=self.w_area,
-            w_adj=self.w_adj,
-        )
-        return (penalty,)
+        # If empty, skip JIT and use neutral penalty
+        if rules.size == 0:
+            return (0.0, )
+        else:
+            penalty = _calculate_penalties_numba(
+                node_assignment=node_assignment,
+                edges_u=self.graph.adjacency_edges_np[0],
+                edges_v=self.graph.adjacency_edges_np[1],
+                grid_coords=self.graph.grid_positions, 
+                rules_matrix=self.rules_matrix,
+                target_counts=self.target_counts,
+                compactness_rules=self.compactness_rules,
+                rectangularity_rules=self.rectangularity_rules, 
+                per_floor_rules=self.per_floor_rules,
+                floor_node_ranges=self.graph.floor_node_ranges,
+                w_area=self.w_area,
+                w_adj=self.w_adj,
+            )
+            return (penalty,)

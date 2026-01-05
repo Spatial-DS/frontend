@@ -8,6 +8,7 @@ numpy
 panda
 scipy
 shapely
+sqlalchemy
 uvicorn
 fastapi
 python-multipart

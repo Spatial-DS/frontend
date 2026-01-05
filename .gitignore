@@ -26,4 +26,14 @@ dist-ssr
 __pycache__
 *.db
 
-*/generated_reports/*
+# Ignore generated layout and reports contents
+backend/generated_layout/*
+backend/generated_reports/*
+
+# But keep the folders themselves
+!backend/generated_layout/.gitkeep
+!backend/generated_reports/.gitkeep
+
+# Ignore Python virtual environments
+.venv/
+
