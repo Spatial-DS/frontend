@@ -1,4 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect} from 'react';
+
+// import { useNavigate } from 'react-router-dom';
+// import { useEffect } from 'react';
+
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import './LayoutGeneratorPage.css';
@@ -36,6 +40,37 @@ export const INITIAL_ZONES = [
 ];
 
 const API_BASE_URL = "http://localhost:8000";
+
+
+
+import { useNavigate } from "react-router-dom";
+
+
+
+export function useUnsavedChangesPrompt(isPdfSaved, resultsReady) {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isPdfSaved && resultsReady) {
+      const originalNavigate = navigate;
+
+      // Monkey-patch navigate
+      const customNavigate = (to, options) => {
+        const confirmLeave = window.confirm(
+          "You have unsaved results. Are you sure you want to leave?"
+        );
+        if (confirmLeave) {
+          originalNavigate(to, options);
+        }
+      };
+
+      // Replace navigate globally (optional)
+      navigate.custom = customNavigate;
+    }
+  }, [isPdfSaved, resultsReady, navigate]);
+}
+
+
 
 const fileToBase64 = (file) => {
   return new Promise((resolve, reject) => {
@@ -91,6 +126,10 @@ function LayoutGeneratorPage() {
       return saved ? JSON.parse(saved) : 'add';
     } catch (e) { return 'add'; }
   });
+
+  // Track if user has saved or downloaded the generated results
+  const [isPdfSaved, setIsPdfSaved] = useState(false);
+
 
   useEffect(() => {
     localStorage.setItem('library_layout_floors', JSON.stringify(floors));
@@ -270,21 +309,21 @@ function LayoutGeneratorPage() {
             }
 
             // --- Log to History ---
-            try {
-              const fileName = getGeneratedFilename();
-              const newHistoryItem = {
-                id: Date.now(),
-                name: fileName,
-                type: 'Layout Generations',
-                date: new Date().toISOString().split('T')[0]
-              };
-
-              const currentHistory = JSON.parse(localStorage.getItem('library_app_history') || '[]');
-              const updatedHistory = [newHistoryItem, ...currentHistory];
-              localStorage.setItem('library_app_history', JSON.stringify(updatedHistory));
-            } catch (histError) {
-              console.error("Failed to log history:", histError);
-            }
+            // try {
+            //   const fileName = getGeneratedFilename();
+            //   const newHistoryItem = {
+            //     id: Date.now(),
+            //     name: fileName,
+            //     type: 'Layout Generations',
+            //     date: new Date().toISOString().split('T')[0]
+            //   };
+              
+            //   const currentHistory = JSON.parse(localStorage.getItem('library_app_history') || '[]');
+            //   const updatedHistory = [newHistoryItem, ...currentHistory];
+            //   localStorage.setItem('library_app_history', JSON.stringify(updatedHistory));
+            // } catch (histError) {
+            //   console.error("Failed to log history:", histError);
+            // }
             // ----------------------
 
           } else if (statusData.status === 'failed') {
@@ -338,39 +377,117 @@ function LayoutGeneratorPage() {
         const pdfWidth = 210;
         const pdfHeight = 297;
 
-        // Iterate over each page element and add it to the PDF
-        for (let i = 0; i < pageElements.length; i++) {
-          const pageEl = pageElements[i];
+            // Iterate over each page element and add it to the PDF
+            for (let i = 0; i < pageElements.length; i++) {
+                const pageEl = pageElements[i];
+                
+                // Capture this specific page element
+                const canvas = await html2canvas(pageEl, { 
+                    scale: 2, 
+                    useCORS: true,
+                    logging: false
+                });
+                
+                const imgData = canvas.toDataURL('image/png');
+                const imgProps = pdf.getImageProperties(imgData);
+                // Scale to fit width
+                const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                
+                // If not the first page, add a new one
+                if (i > 0) {
+                    pdf.addPage();
+                }
+                
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, imgHeight);
+            }
 
-          // Capture this specific page element
-          const canvas = await html2canvas(pageEl, {
-            scale: 2,
-            useCORS: true,
-            logging: false
-          });
+            setIsPdfSaved(true);
+            pdf.save(getGeneratedFilename());
 
-          const imgData = canvas.toDataURL('image/png');
-          const imgProps = pdf.getImageProperties(imgData);
-          // Scale to fit width
-          const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
-          // If not the first page, add a new one
-          if (i > 0) {
-            pdf.addPage();
-          }
-
-          pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, imgHeight);
+        } catch (err) {
+            console.error("PDF Generation failed", err);
+            alert("Failed to generate PDF");
+        } finally {
+            setIsGeneratingPdf(false);
         }
-
-        pdf.save(getGeneratedFilename());
-      } catch (err) {
-        console.error("PDF Generation failed", err);
-        alert("Failed to generate PDF");
-      } finally {
-        setIsGeneratingPdf(false);
-      }
     }, 1000); // 1 second delay to ensure large DOM renders
   };
+
+
+  // PDF Save to Database
+  const handleUploadPDF = async () => {
+  setIsGeneratingPdf(true);
+  setTimeout(async () => {
+    const pageElements = document.querySelectorAll('.pdf-page-to-print');
+    if (!pageElements || pageElements.length === 0) {
+      setIsGeneratingPdf(false);
+      return;
+    }
+
+    try {
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = 210;
+      const pdfHeight = 297;
+
+      for (let i = 0; i < pageElements.length; i++) {
+        const canvas = await html2canvas(pageElements[i], { scale: 2, useCORS: true });
+        const imgData = canvas.toDataURL('image/png');
+        const imgProps = pdf.getImageProperties(imgData);
+        const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+        if (i > 0) pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, imgHeight);
+      }
+
+      const fileName = getGeneratedFilename();
+
+      // Upload to backend
+      const pdfBlob = pdf.output('blob');
+      const formData = new FormData();
+      formData.append('file', pdfBlob, fileName);
+      formData.append('username', localStorage.getItem('currentUser'));
+
+      await fetch(`${API_BASE_URL}/upload-generated-layout`, {
+        method: 'POST',
+        body: formData
+      });
+
+      setIsPdfSaved(true);
+      console.log("PDF uploaded successfully!");
+    } catch (err) {
+      console.error("PDF Generation failed", err);
+      alert("Failed to generate PDF");
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  }, 1000);
+};
+
+  
+// Warn on tab close --> Scuffed pop-up
+useEffect(() => {
+  const handleClick = (e) => {
+    if (!isPdfSaved && resultsReady) {
+      const confirmLeave = window.confirm(
+        "You have unsaved results. Are you sure you want to leave?"
+      );
+      if (!confirmLeave) {
+        e.preventDefault();
+        // e.returnValue = '';
+      }
+    }
+  };
+
+  // Attach to all links
+  const links = document.querySelectorAll('a[href]');
+  links.forEach(link => link.addEventListener('click', handleClick));
+
+  return () => {
+    links.forEach(link => link.removeEventListener('click', handleClick));
+  };
+}, [isPdfSaved, resultsReady]);
+
+
 
   const currentFloor = floors.find(f => f.id === activeTab);
 
@@ -667,13 +784,16 @@ function LayoutGeneratorPage() {
           <>
             <div style={{ flex: 1 }}></div>
             {resultsReady ? (
-              <>
-                {/* UPDATED: Button Text */}
-                <Button variant="outline" size="default" onClick={handleRestart}>Restart Generation</Button>
-                <Button variant="default" size="default" onClick={handleDownloadPDF} disabled={isGeneratingPdf}>
-                  {isGeneratingPdf ? "Generating PDF..." : "Download PDF"}
-                </Button>
-              </>
+                <>
+                    {/* UPDATED: Button Text */}
+                    <Button variant="outline" size="default" onClick={handleRestart}>Restart Generation</Button>
+                    <Button variant="outline" size="default" onClick={handleDownloadPDF} disabled={isGeneratingPdf}>
+                        {isGeneratingPdf ? "Generating PDF..." : "Download PDF"}
+                    </Button>
+                    <Button variant="default" size="default" onClick={handleUploadPDF} disabled={isPdfSaved}>
+                      {!isPdfSaved ? "Save PDF to Database" : "Saved to Database ✓"} 
+                    </Button> 
+                </>
             ) : (
               <Button variant="default" size="default" onClick={handleRestart}>Restart Generation</Button>
             )}

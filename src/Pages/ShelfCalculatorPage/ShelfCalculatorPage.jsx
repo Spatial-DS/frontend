@@ -10,6 +10,8 @@ import GuideCard from '../../Components/Cards/GuideCard/GuideCard';
 import Icon from '../../Components/Icon/Icon'; 
 import './ShelfCalculatorPage.css';
 
+const API_BASE_URL = "http://localhost:8000";
+
 function ShelfCalculatorPage() {
   const [activeChip, setActiveChip] = useState('labels'); 
   
@@ -198,8 +200,11 @@ function ShelfCalculatorPage() {
         formData.append('labels', labelFile);
         formData.append('target_size', targetSize);
         formData.append('current_size', currentSize);
+        formData.append('username', localStorage.getItem('currentUser'));
 
-        const response = await fetch('http://localhost:8000/calculate-shelf', {
+        const token = localStorage.getItem('currentUser');
+
+        const response = await fetch(`${API_BASE_URL}/calculate-shelf`, {
             method: 'POST',
             body: formData,
         });
@@ -224,16 +229,16 @@ function ShelfCalculatorPage() {
         const url = window.URL.createObjectURL(blob);
         setDownloadUrl(url); 
         
-        const newHistoryItem = {
-          id: Date.now(),
-          name: serverFileName,
-          type: 'Shelf Run Calculations',
-          date: new Date().toISOString().split('T')[0]
-        };
+        // const newHistoryItem = {
+        //   id: Date.now(),
+        //   name: serverFileName,
+        //   type: 'Shelf Run Calculations',
+        //   date: new Date().toISOString().split('T')[0]
+        // };
 
-        const currentHistory = JSON.parse(localStorage.getItem('library_app_history') || '[]');
-        const updatedHistory = [newHistoryItem, ...currentHistory];
-        localStorage.setItem('library_app_history', JSON.stringify(updatedHistory));
+        // const currentHistory = JSON.parse(localStorage.getItem('library_app_history') || '[]');
+        // const updatedHistory = [newHistoryItem, ...currentHistory];
+        // localStorage.setItem('library_app_history', JSON.stringify(updatedHistory));
 
         setResultsReady(true);
         setActiveChip('results');
@@ -307,7 +312,11 @@ function ShelfCalculatorPage() {
                             4. If you need to view your existing labels, click on the Download Existing Labels button
                         </>
                     } 
-                    uploadText={currentLabelFile ? `Using: ${currentLabelFile.name}` : "Upload new labels file"} 
+                    uploadText={
+                            <span style={{ color: currentLabelFile ? '#008a63' : '#333', fontWeight: currentLabelFile ? '600' : 'bold' }}>
+                              {currentLabelFile ? `Using: ${currentLabelFile.name}` : 'Upload new labels file'}
+                            </span>
+                    }
                     formatText={currentLabelFile ? `Uploaded on ${currentLabelFile.date} • ${currentLabelFile.size}` : "Excel (.xlsx)"}
                     buttonText="Browse Files" 
                     onFileSelect={handleLabelUpload} 
@@ -366,7 +375,12 @@ function ShelfCalculatorPage() {
                       6. Under the filter "Item Branch Code", select the branch <br />
                       7. Under the filter "Select Item Media", select "BOOK-Book" <br />
                       8. Download the data<br /></>}
-                    uploadText={rawFile ? `Uploaded: ${rawFile.name}` : "Upload your spreadsheet"}
+                    // uploadText={rawFile ? `Uploaded: ${rawFile.name}` : "Upload your spreadsheet"}
+                    uploadText={
+                            <span style={{ color: rawFile ? '#008a63' : '#333', fontWeight: rawFile ? '600' : 'bold' }}>
+                              {rawFile ? `Uploaded: ${rawFile.name}` : 'Upload your spreadsheet'}
+                            </span>
+                    }
                     formatText="Excel (.xlsx), CSV"
                     onFileSelect={handleRawDataUpload}
                 />
@@ -378,7 +392,12 @@ function ShelfCalculatorPage() {
                   1. Download "Collection Mix" template <br />
                   2. Fill in the figures for "Target end state collection" and "Retained collection".
                   </>}
-                  uploadText={collectionMixFile ? `Uploaded: ${collectionMixFile.name}` : "Upload your spreadsheet"}
+                  // uploadText={collectionMixFile ? `Uploaded: ${collectionMixFile.name}` : "Upload your spreadsheet"}
+                  uploadText={
+                            <span style={{ color: collectionMixFile ? '#008a63' : '#333', fontWeight: collectionMixFile ? '600' : 'bold' }}>
+                              {collectionMixFile ? `Uploaded: ${collectionMixFile.name}` : 'Upload your spreadsheet'}
+                            </span>
+                    }
                   formatText="Excel (.xlsx), CSV"
                   onFileSelect={handleCollectionMixUpload}
                   headerActions={<Button variant="default" onClick={handleDownloadCollectionMix}>Download Collection Mix Template</Button>}

@@ -6,6 +6,8 @@ import Icon from '../../Components/Icon/Icon';
 import FormField from '../../Components/FormField/FormField';
 import PasswordStrength from '../../Components/PasswordStrength/PasswordStrength';
 
+const API_BASE_URL = "http://localhost:8000";
+
 // Helper for password strength
 const calculatePasswordStrength = (pass) => {
   if (!pass || pass.length === 0) return 0;
@@ -25,12 +27,13 @@ function SettingsPage() {
 
   // --- ACCOUNT STATE ---
   const [currentPassword, setCurrentPassword] = useState(() => {
-    const user = localStorage.getItem('currentUser');
-    if (!user) return '';
-    const users = JSON.parse(localStorage.getItem('app_users') || '{}');
-    if (users[user]) return users[user];
-    if (user === 'tampines') return 'tampineslibrary';
-    return '';
+    // const user = localStorage.getItem('currentUser');
+    return localStorage.getItem('currentPassword');
+    // if (!user) return '';
+    // const users = JSON.parse(localStorage.getItem('app_users') || '{}');
+    // if (users[user]) return users[user];
+    // if (user === 'tampines') return 'tampineslibrary';
+    // return '';
   });
 
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -40,20 +43,75 @@ function SettingsPage() {
   
   // Feedback Message State
   const [saveMessage, setSaveMessage] = useState('');
+  const [error, setError] = useState('');
 
   // --- HISTORY STATE ---
-  const [historyData, setHistoryData] = useState(() => {
-      try {
-          return JSON.parse(localStorage.getItem('library_app_history') || '[]');
-      } catch (e) { return []; }
-  });
+//   const [historyData, setHistoryData] = useState(() => {
+//       try {
+//           return JSON.parse(localStorage.getItem('library_app_history') || '[]');
+//       } catch (e) { return []; }
+//   });
 
+//   useEffect(() => {
+//       if (activeChip === 'results') {
+//           const stored = localStorage.getItem('library_app_history');
+//           if (stored) setHistoryData(JSON.parse(stored));
+//       }
+//   }, [activeChip]);
+
+  const [historyData, setHistoryData] = useState([]);
+
+//   useEffect(() => {
+//     if (activeChip === 'results') {
+//       fetch(`${API_BASE_URL}/shelf-run-history`)
+//         .then(response => response.json())
+//         .then(data => setHistoryData(data))
+//         .catch(err => console.error("Failed to load history:", err));
+//     }
+//   }, [activeChip]);
+
+  
   useEffect(() => {
-      if (activeChip === 'results') {
-          const stored = localStorage.getItem('library_app_history');
-          if (stored) setHistoryData(JSON.parse(stored));
-      }
-  }, [activeChip]);
+    if (activeChip === 'results') {
+      const currentUser = localStorage.getItem('currentUser');
+    //   Promise.all([
+    //     fetch(`${API_BASE_URL}/shelf-run-history`).then(res => res.json()),
+    //     fetch(`${API_BASE_URL}/generated-layout-history`).then(res => res.json())
+    //   ])
+    //     .then(([shelfHistory, layoutHistory]) => {
+    //       // Merge both arrays
+    //       const combined = [...shelfHistory, ...layoutHistory];
+
+    //       // Sort by created_at descending
+    //       combined.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+    //       setHistoryData(combined);
+    //     })
+    //     .catch(err => console.error("Failed to load history:", err));
+    // }
+    
+        const formData = new FormData();
+        formData.append("username", currentUser);
+        Promise.all([
+        fetch(`${API_BASE_URL}/shelf-run-history`, {
+            method: "POST",
+            body: formData
+        }).then(res => res.json()),
+        fetch(`${API_BASE_URL}/generated-layout-history`, {
+            method: "POST",
+            body: formData
+        }).then(res => res.json())
+        ])
+        .then(([shelfHistory, layoutHistory]) => {
+        // Merge both arrays
+        const combined = [...shelfHistory, ...layoutHistory];
+        // Sort by created_at descending
+        combined.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        setHistoryData(combined);
+        })
+        .catch(err => console.error("Failed to load history:", err));
+  }}, [activeChip]);
+
 
   const handleNewPasswordChange = (e) => {
     const val = e.target.value;
@@ -61,7 +119,7 @@ function SettingsPage() {
     setPasswordStrength(calculatePasswordStrength(val));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
       if (isChangingPassword) {
           if (!newPassword || !confirmPassword) {
               alert("Please fill in both password fields.");
@@ -72,32 +130,72 @@ function SettingsPage() {
               return;
           }
           
-          const user = localStorage.getItem('currentUser');
-          if (user) {
-              const users = JSON.parse(localStorage.getItem('app_users') || '{}');
-              users[user] = newPassword;
-              localStorage.setItem('app_users', JSON.stringify(users));
+        //   const user = localStorage.getItem('currentUser');
+        //   if (user) {
+        //       const users = JSON.parse(localStorage.getItem('app_users') || '{}');
+        //       users[user] = newPassword;
+        //       localStorage.setItem('app_users', JSON.stringify(users));
+        //   }
+
+          // Update password
+          const username = localStorage.getItem('currentUser');
+          try {
+              const formData = new FormData();
+              formData.append("username", username);
+              formData.append("old_password", currentPassword);
+              formData.append("new_password", newPassword);
+              formData.append("confirm_password", confirmPassword);
+
+              const response = await fetch(`${API_BASE_URL}/updatepass`, {
+              method: "POST",
+              body: formData,
+              });
+
+              const data = await response.json();
+              if (data.result === "1") {
+                setSaveMessage("Password updated successfully");
+                setError("");
+              } else {
+              setError(data.error || "Failed to update password");
+              }
+          } catch (err) {
+              console.error(err);
+              setError("An error occurred while updating password");
           }
 
-          console.log("Password updated");
-          setCurrentPassword(newPassword); 
           
-          setNewPassword('');
-          setConfirmPassword('');
-          setPasswordStrength(0);
-          setIsChangingPassword(false);
+        // Reset UI state
+            setCurrentPassword(newPassword);
+            setNewPassword('');
+            setConfirmPassword('');
+            setPasswordStrength(0);
+            setIsChangingPassword(false);
+            setSaveMessage("Password updated successfully.");
+            setTimeout(() => setSaveMessage(''), 3000);
+        } else {
+            setSaveMessage("Settings saved.");
+            setTimeout(() => setSaveMessage(''), 3000);
+        }
+
+    //       console.log("Password updated");
+    //       setCurrentPassword(newPassword); 
           
-          setSaveMessage("Password updated successfully.");
-          setTimeout(() => setSaveMessage(''), 3000); 
-      } else {
-          setSaveMessage("Settings saved.");
-          setTimeout(() => setSaveMessage(''), 3000);
-      }
+    //       setNewPassword('');
+    //       setConfirmPassword('');
+    //       setPasswordStrength(0);
+    //       setIsChangingPassword(false);
+          
+    //       setSaveMessage("Password updated successfully.");
+    //       setTimeout(() => setSaveMessage(''), 3000); 
+    //   } else {
+    //       setSaveMessage("Settings saved.");
+    //       setTimeout(() => setSaveMessage(''), 3000);
+    //   }
   };
 
   const handleHistoryDownload = async (fileName) => {
       try {
-          const response = await fetch(`http://localhost:8000/download-report/${fileName}`);
+          const response = await fetch(`${API_BASE_URL}/download-report/${fileName}`);
           if (!response.ok) throw new Error("File not found on server.");
 
           const blob = await response.blob();
@@ -114,9 +212,43 @@ function SettingsPage() {
       }
   };
 
-  const filteredHistory = historyFilter === 'All' 
-    ? historyData 
-    : historyData.filter(item => item.type === historyFilter);
+//   const filteredHistory = historyFilter === 'All' 
+//     ? historyData 
+//     : historyData.filter(item => item.type === historyFilter);
+
+
+  const filteredHistory = historyFilter === 'All'
+    ? historyData
+    : historyData.filter(item => {
+        const name = item.filename.toLowerCase();
+        if (historyFilter === 'Shelf Run Calculations') {
+          return name.includes('shelf_run');
+        } else if (historyFilter === 'Layout Generations') {
+          return name.includes('layout');
+        }
+        return true;
+      });
+
+
+  // Delete the corresponding files
+  const handleHistoryDelete = async (fileId, filename) => {
+    if (!window.confirm("Are you sure you want to delete this file?")) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/delete-history?file_id=${fileId}&filename=${encodeURIComponent(filename)}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Failed to delete file");
+
+      // Update UI after deletion
+      setHistoryData(historyData.filter(item => !(item.id === fileId && item.filename === filename)));
+    //   alert("File deleted successfully");
+    } catch (error) {
+      console.error("Delete failed:", error);
+      alert("Could not delete file");
+    }
+  };
+
 
   return (
     <div className="settings-page">
@@ -146,7 +278,7 @@ function SettingsPage() {
                     </button>
                 </div>
 
-                <div className="history-list">
+                {/* <div className="history-list">
                     {filteredHistory.length > 0 ? (
                         filteredHistory.map((item) => (
                             <div key={item.id} className="history-item">
@@ -160,7 +292,38 @@ function SettingsPage() {
                     ) : (
                         <p style={{textAlign: 'center', color: '#666', padding: '2rem'}}>No history found.</p>
                     )}
+                </div> */}
+                
+                <div className="history-list">
+                    {filteredHistory.length > 0 ? (
+                        filteredHistory.map((item) => (
+                        <div key={item.id} className="history-item">
+                            <span className="history-item-name">{item.filename}</span>
+                            <span className="history-item-badge">{item.created_at}</span>
+                            <div className="history-actions">
+                            <button
+                                className="icon-btn"
+                                onClick={() => handleHistoryDownload(item.filename)}
+                            >
+                                <Icon name="ArrowDownToDot" size={20} />
+                            </button>
+                            <button
+                                className="icon-btn"
+                                onClick={() => handleHistoryDelete(item.id, item.filename)}
+                                style={{ marginLeft: '0.5rem', color: '#9A0D1B' }}
+                            >
+                                <Icon name="Trash2" size={20} />
+                            </button>
+                            </div>
+                        </div>
+                        ))
+                    ) : (
+                        <p style={{ textAlign: 'center', color: '#666', padding: '2rem' }}>
+                        No history found.
+                        </p>
+                    )}
                 </div>
+
             </div>
         </div>
       ) : (

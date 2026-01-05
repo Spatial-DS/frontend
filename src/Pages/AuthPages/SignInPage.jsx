@@ -3,6 +3,8 @@ import { Book } from 'lucide-react';
 import './AuthPages.css';
 import { useNavigate } from 'react-router-dom';
 
+const API_BASE_URL = "http://localhost:8000";
+
 const SignInPage = () => {
   const navigate = useNavigate();
   
@@ -24,18 +26,18 @@ const SignInPage = () => {
   };
 
   // --- HELPER: USER MANAGEMENT ---
-  const getUsers = () => {
-    const stored = localStorage.getItem('app_users');
-    return stored ? JSON.parse(stored) : {};
-  };
+  // const getUsers = () => {
+  //   const stored = localStorage.getItem('app_users');
+  //   return stored ? JSON.parse(stored) : {};
+  // };
 
-  const saveUser = (username, password) => {
-    const users = getUsers();
-    users[username] = password;
-    localStorage.setItem('app_users', JSON.stringify(users));
-  };
+  // const saveUser = (username, password) => {
+  //   const users = getUsers();
+  //   users[username] = password;
+  //   localStorage.setItem('app_users', JSON.stringify(users));
+  // };
 
-  const handleAuthAction = (e) => {
+  const handleAuthAction = async (e) => {
     e.preventDefault();
     setError('');
     setSuccessMsg('');
@@ -49,20 +51,45 @@ const SignInPage = () => {
 
     // --- 1. SIGN IN LOGIC ---
     if (view === 'signin') {
-      const users = getUsers();
-      
-      // Check hardcoded dummy or stored user
-      const isValidDummy = username === 'tampines' && password === 'tampineslibrary';
-      const storedPassword = users[username];
+      // const users = getUsers();
+      try {
+          const response = await fetch(`${API_BASE_URL}/userauth`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+              username: formData.username,
+              password: formData.password
+            })
+          });
 
-      if (isValidDummy || (storedPassword && storedPassword === password)) {
-        // Set active session
-        localStorage.setItem('currentUser', username);
-        // Initialize history/settings for this user if usually needed (optional)
-        navigate('/shelf-calculator'); 
-      } else {
-        setError("Invalid username or password.");
-      }
+          const data = await response.json();
+
+      // Check hardcoded dummy or stored user
+      // const isValidDummy = username === 'tampines' && password === 'tampineslibrary';
+      // const storedPassword = users[username];
+
+      // if (isValidDummy || (storedPassword && storedPassword === password)) {
+      //   // Set active session
+      //   localStorage.setItem('currentUser', username);
+      //   // Initialize history/settings for this user if usually needed (optional)
+      //   navigate('/shelf-calculator'); 
+      // } else {
+      //   setError("Invalid username or password.");
+      // }
+      
+        if (data.result === "1") {
+              // Success: store token or username and password
+              localStorage.setItem('currentUser', formData.username);
+              localStorage.setItem('currentPassword', formData.password);
+              // Initialize history/settings for this user if usually needed (optional)
+              navigate('/shelf-calculator');
+            } else {
+              setError("Invalid username or password. Try again.");
+            }
+          } catch (err) {
+            setError("Server error. Please try again later.");
+          }
+      
     }
 
     // --- 2. SIGN UP LOGIC ---
@@ -72,21 +99,54 @@ const SignInPage = () => {
         return;
       }
 
-      const users = getUsers();
-      if (users[username] || username === 'tampines') {
-        setError("Username already exists.");
-        return;
-      }
+      // const users = getUsers();
+      // if (users[username] || username === 'tampines') {
+      //   setError("Username already exists.");
+      //   return;
+      // }
 
-      saveUser(username, password);
-      // Auto-login or ask to sign in? Let's ask to sign in for clarity.
-      setSuccessMsg("Account created! Please sign in.");
-      setTimeout(() => {
-        setFormData({ username: '', password: '', confirmPassword: '' });
-        setView('signin');
-        setSuccessMsg('');
-      }, 1500);
+      // saveUser(username, password);
+      // // Auto-login or ask to sign in? Let's ask to sign in for clarity.
+      // setSuccessMsg("Account created! Please sign in.");
+      // setTimeout(() => {
+      //   setFormData({ username: '', password: '', confirmPassword: '' });
+      //   setView('signin');
+      //   setSuccessMsg('');
+      // }, 1500);
+
+      // Add user to database
+      try {
+          const formData = new FormData();
+          formData.append("username", username);
+          formData.append("password", password);
+          formData.append("confirm_password", confirmPassword);
+
+          const response = await fetch(`${API_BASE_URL}/signup`, {
+            method: "POST",
+            body: formData,
+          });
+
+          const data = await response.json();
+
+          if (data.result === "0") {
+            const errorData = await response.json();
+            setError(data.error || "Failed to create account");
+            return;
+          }
+          // Auto-login or ask to sign in? Let's ask to sign in for clarity.
+          setSuccessMsg("Account created! Please sign in.");
+          setTimeout(() => {
+            setFormData({ username: "", password: "", confirmPassword: "" });
+            setView("signin");
+            setSuccessMsg("");
+          }, 1000);
+        } catch (err) {
+          console.error(err);
+          setError("An error occurred during signup");
+        }
+
     }
+
 
     // --- 3. RESET PASSWORD LOGIC ---
     else if (view === 'reset') {
@@ -95,25 +155,56 @@ const SignInPage = () => {
         return;
       }
 
-      const users = getUsers();
+      // Checks and other verification are moved to backend
+
+      // const users = getUsers();
       // Can't reset the dummy account this way in this simple demo logic, only stored ones
-      if (username === 'tampines') {
-         setError("Cannot reset administrative account.");
-         return;
-      }
+      // if (username === 'tampines') {
+      //    setError("Cannot reset administrative account.");
+      //    return;
+      // }
 
-      if (!users[username]) {
-        setError("Username not found.");
-        return;
-      }
+      // if (!users[username]) {
+      //   setError("Username not found.");
+      //   return;
+      // }
 
-      saveUser(username, password); // Overwrite password
-      setSuccessMsg("Password reset successful. Please sign in.");
-      setTimeout(() => {
-        setFormData({ username: '', password: '', confirmPassword: '' });
-        setView('signin');
-        setSuccessMsg('');
-      }, 1500);
+      // saveUser(username, password); // Overwrite password
+      // setSuccessMsg("Password reset successful. Please sign in.");
+      // setTimeout(() => {
+      //   setFormData({ username: '', password: '', confirmPassword: '' });
+      //   setView('signin');
+      //   setSuccessMsg('');
+      // }, 1500);
+
+      // Overwrite password
+      try {
+          const formData = new FormData();
+          formData.append("username", username);
+          formData.append("new_password", password);
+          formData.append("confirm_password", confirmPassword);
+
+          const response = await fetch(`${API_BASE_URL}/resetpass`, {
+            method: "POST",
+            body: formData,
+          });
+
+          const data = await response.json();
+
+          if (data.result === "0") {
+            setError(data.error || "Failed to reset password");
+            return;
+          }
+          setSuccessMsg("Password reset successfully");
+          setTimeout(() => {
+            setFormData({ username: "", password: "", confirmPassword: "" });
+            setView("signin");
+            setSuccessMsg("");
+          }, 1000);
+        } catch (err) {
+          console.error(err);
+          setError("An error occurred while resetting password");
+        }
     }
   };
 
@@ -159,13 +250,16 @@ const SignInPage = () => {
         <div className='auth-form-container'>
           <form className='auth-form' onSubmit={handleAuthAction}>
             
+            {/* Error message field Field */}
+            {error && <div className="error-message">{error}</div>}
+
             {/* Username Field */}
             <div className='auth-form-input'>
                 <label>Username</label>
                 <input
                     name="username"
                     type="text"
-                    className="auth-input"
+                    className={`auth-input ${error ? 'error' : ''}`}
                     placeholder="Enter username"
                     value={formData.username}
                     onChange={handleChange}
@@ -178,7 +272,7 @@ const SignInPage = () => {
                 <input
                     name="password"
                     type="password"
-                    className="auth-input"
+                    className={`auth-input ${error ? 'error' : ''}`}
                     placeholder={view === 'reset' ? "Enter new password" : "Enter password"}
                     value={formData.password}
                     onChange={handleChange}
@@ -220,8 +314,8 @@ const SignInPage = () => {
             )}
 
             {/* Error / Success Messages */}
-            {error && <div style={{color: 'var(--red)', fontSize:'0.9rem'}}>{error}</div>}
-            {successMsg && <div style={{color: '#28A745', fontSize:'0.9rem'}}>{successMsg}</div>}
+            {error && <div style={{color: '#9A0D1B', fontSize:'0.9rem'}}>{error}</div>}
+            {successMsg && <div style={{color: '#008a63', fontSize:'0.9rem'}}>{successMsg}</div>}
 
             <button type="submit" className="auth-button">
                 {btnText}
