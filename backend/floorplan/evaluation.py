@@ -302,6 +302,8 @@ class FitnessEvaluator:
 
         self.last_node_assignment = node_assignment
 
+        print("rectangularity_rules:", type(self.rectangularity_rules), self.rectangularity_rules.shape, self.rectangularity_rules.dtype)
+
         penalty = _calculate_penalties_numba(
             node_assignment=node_assignment,
             edges_u=self.graph.adjacency_edges_np[0],

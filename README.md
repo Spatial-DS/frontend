@@ -1,29 +1,23 @@
-Based on the code files provided, I have drafted a comprehensive `README.md` file. It covers the project architecture, features, prerequisites, and step-by-step instructions to get both the Backend (FastAPI) and Frontend (React+Vite) running.
+# LibraryPlan
 
-You can save this content as `README.md` in the root of your project folder (e.g., inside `spatial-ds/`).
+**LibraryPlan** is a web application designed to assist and bridge the gap between librarians and architects. It combines data analytics for collection management with genetic algorithm for spatial layout optimization.
 
------
-
-# LibraryPlan: Spatial Data System
-
-**LibraryPlan** is a full-stack web application designed to assist library planners and architects. It combines data analytics for collection management with evolutionary algorithms for spatial layout optimization.
-
-## 🚀 Features
+## Features
 
 ### 1\. Shelf Calculator
 
   * **Data-Driven Planning:** Ingests circulation and collection data (Excel/CSV).
-  * **Smart Calculation:** Computes linear meterage requirements based on target growth rates ($\alpha$) and collection mix.
-  * **Automated Reporting:** Generates formatted Microsoft Word (`.docx`) reports detailing shelf runs and tier requirements.
+  * **Smart Calculation:** Computes shelf runs based on inputs (eg. target and current collection sizes).
+  * **Automated Reporting:** Generates formatted Word (`.docx`) reports detailing shelf runs and tier requirements.
 
 ### 2\. Layout Generator
 
   * **Genetic Algorithm Optimization:** Uses the DEAP library to generate optimal floor plan layouts based on adjacency rules, flow constraints, and zone targets.
-  * **Multi-Floor Support:** Capable of optimizing layouts across multiple building levels.
+  * **Multi-Floor Support:** Capable of optimizing layouts across multiple library levels.
   * **Interactive Tracer:** Built-in tool to trace boundaries and fixed elements (entrances, lifts) directly on uploaded floor plan images.
   * **Visual Analytics:** Provides zone distribution statistics and downloadable PDF reports of the generated layouts.
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 ### Frontend
 
@@ -36,31 +30,35 @@ You can save this content as `README.md` in the root of your project folder (e.g
 
   * **API:** Python FastAPI
   * **Algorithm:** DEAP (Distributed Evolutionary Algorithms in Python), NumPy, SciPy
+  * **AI Model:** Google Gemini
   * **Geometry:** Shapely
   * **Data Processing:** Pandas, OpenPyXL, Python-docx
   * **Database:** SQLite (via SQLAlchemy)
 
 -----
 
-## 📋 Prerequisites
+## Prerequisites
 
 Before running the project, ensure you have the following installed:
 
   * **Node.js** (v18 or higher) & **npm**
   * **Python** (v3.10 or higher)
+  * **Visual Studio Code (VSC)** or any other coding interface
 
 -----
 
-## ⚡ Quick Start Guide
+## Quick Start Guide
 
 The project is split into two parts: the `frontend` (React) and the `backend` (Python). You need to run both terminals simultaneously.
+
+**Make sure to open the code file in the coding interface or VSC first.**
 
 ### 1\. Backend Setup (FastAPI)
 
 1.  Open a terminal and navigate to the backend directory:
 
     ```bash
-    cd spatial-ds/frontend/frontend-cells/backend
+    cd frontend/frontend-cells/backend
     ```
 
 2.  (Optional but Recommended) Create and activate a virtual environment:
@@ -81,7 +79,21 @@ The project is split into two parts: the `frontend` (React) and the `backend` (P
     pip install -r requirements.txt
     ```
 
-4.  Start the API server:
+4. Set up API Key: The application requires a Google Gemini API key for the AI layout rules features.
+    The key will be provided in a separate file (GOOGLE_API_KEY). Open the file in Notepad and paste the key in.
+
+    ```bash 
+    # Windows (Command Prompt)
+    set GOOGLE_API_KEY=your_api_key_here
+
+    # Windows (PowerShell)
+    $env:GOOGLE_API_KEY="your_api_key_here"
+
+    # Mac/Linux
+    export GOOGLE_API_KEY=your_api_key_here
+    ```
+
+5. Start the API server:
 
     ```bash
     python app.py
@@ -94,7 +106,7 @@ The project is split into two parts: the `frontend` (React) and the `backend` (P
 1.  Open a **new** terminal window and navigate to the frontend directory:
 
     ```bash
-    cd spatial-ds/frontend/frontend-cells
+    cd frontend/frontend-cells
     ```
 
 2.  Install Node dependencies:
@@ -162,5 +174,6 @@ spatial-ds/frontend/frontend-cells/
 ## 🐛 Troubleshooting
 
   * **Backend Error:** If you see `ModuleNotFoundError`, ensure you have activated your virtual environment and installed `requirements.txt`.
-  * **Optimization Stalls:** The Layout Generator is computationally intensive. Check the terminal running the backend for progress logs (e.g., `Gen 10/100 | Fitness ...`).
+  * **API Key Error:** If the optimization fails immediately, ensure `GOOGLE_API_KEY` is set correctly in the backend terminal.
+  * **Optimization Stalls:** The Layout Generator is computationally intensive. Check the terminal running the backend for progress logs.
   * **Database Locks:** The app uses a local SQLite file (`floorplan.db`). If the app crashes, delete this file to reset the database state; it will be recreated automatically on the next run.
