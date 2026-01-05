@@ -35,5 +35,6 @@ backend/generated_reports/*
 !backend/generated_reports/.gitkeep
 
 # Ignore Python virtual environments
+venv/
 .venv/
 

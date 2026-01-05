@@ -1,16 +1,21 @@
 # LibraryPlan
+<div align="center">
+  <h4><a href="https://drive.google.com/file/d/1MY3Dv_yCJnw4hx2RMO7_VJYvsrCRWo_i/view?usp=sharing">Project Demo</a></h4>
+</div>  
 
-**LibraryPlan** is a web application designed to assist and bridge the gap between librarians and architects. It combines data analytics for collection management with genetic algorithm for spatial layout optimization.
+In collaboration with SUTD and NLB, **LibraryPlan** is a web application designed to assist and bridge the gap between librarians and architects. It combines data analytics for collection management with genetic algorithm for spatial layout optimization.
 
 ## Features
 
 ### 1\. Shelf Calculator
+  <img src="README_assets/shelf_calculator.png"> 
 
-  * **Data-Driven Planning:** Ingests circulation and collection data (Excel/CSV).
-  * **Smart Calculation:** Computes shelf runs based on inputs (eg. target and current collection sizes).
-  * **Automated Reporting:** Generates formatted Word (`.docx`) reports detailing shelf runs and tier requirements.
+  * **Data-Driven Planning:** Ingests circulation and collection data (Excel/CSV).  
+  * **Smart Calculation:** Computes shelf runs based on inputs (eg. target and current collection sizes).  
+  * **Automated Reporting:** Generates formatted Word (`.docx`) reports detailing shelf runs and tier requirements.  
 
 ### 2\. Layout Generator
+  <img src="README_assets/layout_generator.png">  
 
   * **Genetic Algorithm Optimization:** Uses the DEAP library to generate optimal floor plan layouts based on adjacency rules, flow constraints, and zone targets.
   * **Multi-Floor Support:** Capable of optimizing layouts across multiple library levels.
@@ -41,27 +46,33 @@
 
 Before running the project, ensure you have the following installed:
 
-  * **Node.js** (v18 or higher) & **npm**
-  * **Python** (v3.10 or higher)
-  * **Visual Studio Code (VSC)** or any other coding interface
+  * **[git](https://git-scm.com/install/)**
+  * **[Node.js](https://nodejs.org/en/download)** (v18 or higher) & **npm**
+  * **[Python](https://www.python.org/downloads/)** (v3.12 or higher)
+  * **[Visual Studio Code (VSC)](https://code.visualstudio.com/docs/setup/setup-overview)** or any other coding interface
 
 -----
 
 ## Quick Start Guide
 
-The project is split into two parts: the `frontend` (React) and the `backend` (Python). You need to run both terminals simultaneously.
-
-**Make sure to open the code file in the coding interface or VSC first.**
+The project is split into two parts: the `frontend` (React) and the `backend` (Python). **You need to run two separate terminals simultaneously.**
 
 ### 1\. Backend Setup (FastAPI)
+1. Git clone
+ ```bash
+    git clone https://github.com/Spatial-DS/frontend.git
+    cd frontend
+```
+
+### 2\. Backend Setup (FastAPI)
 
 1.  Open a terminal and navigate to the backend directory:
 
     ```bash
-    cd frontend/frontend-cells/backend
+    cd backend
     ```
 
-2.  (Optional but Recommended) Create and activate a virtual environment:
+2.  Create and activate a virtual environment:
 
     ```bash
     # Windows
@@ -79,21 +90,18 @@ The project is split into two parts: the `frontend` (React) and the `backend` (P
     pip install -r requirements.txt
     ```
 
-4. Set up API Key: The application requires a Google Gemini API key for the AI layout rules features.
+4. Set up LLM API Key: The application requires a Google Gemini API key for the AI layout rules features.
     The key will be provided in a separate file (GOOGLE_API_KEY). Open the file in Notepad and paste the key in.
 
     ```bash 
-    # Windows (Command Prompt)
-    set GOOGLE_API_KEY=your_api_key_here
-
-    # Windows (PowerShell)
+    # Windows (inside virtual environment)
     $env:GOOGLE_API_KEY="your_api_key_here"
 
     # Mac/Linux
     export GOOGLE_API_KEY=your_api_key_here
     ```
 
-5. Start the API server:
+5. Start the backend server:
 
     ```bash
     python app.py
@@ -101,12 +109,13 @@ The project is split into two parts: the `frontend` (React) and the `backend` (P
 
     *The server will start at `http://localhost:8000`.*
 
-### 2\. Frontend Setup (React)
+### 3\. Frontend Setup (React)
 
 1.  Open a **new** terminal window and navigate to the frontend directory:
 
     ```bash
-    cd frontend/frontend-cells
+      # Project Root directory
+      ./frontend
     ```
 
 2.  Install Node dependencies:
