@@ -1,6 +1,6 @@
 # LibraryPlan
 <div align="center">
-  <h4><a href="https://drive.google.com/file/d/1MY3Dv_yCJnw4hx2RMO7_VJYvsrCRWo_i/view?usp=sharing">Project Demo</a></h4>
+  <h4><a href="https://drive.google.com/file/d/1MY3Dv_yCJnw4hx2RMO7_VJYvsrCRWo_i/view?usp=sharing">Project Demo</a> | <a href="https://drive.google.com/file/d/1MY3Dv_yCJnw4hx2RMO7_VJYvsrCRWo_i/view?usp=sharing">Paper</a></h4>
 </div>  
 
 In collaboration with SUTD and NLB, **LibraryPlan** is a web application designed to assist and bridge the gap between librarians and architects. It combines data analytics for collection management with genetic algorithm for spatial layout optimization.
